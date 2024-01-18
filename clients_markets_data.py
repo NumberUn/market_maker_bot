@@ -1,7 +1,6 @@
 from clients.binance import BinanceClient
 from clients.dydx import DydxClient
 from clients.kraken import KrakenClient
-from core.telegram import Telegram, TG_Groups
 from core.wrappers import try_exc_regular, try_exc_async
 
 import configparser

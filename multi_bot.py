@@ -288,7 +288,6 @@ class MultiBot:
         self.send_timings(responses)
         self.chosen_deal.client_buy.response = None
         self.chosen_deal.client_sell.response = None
-        self.telegram.send_message(message, TG_Groups.DebugDima)
 
     @staticmethod
     @try_exc_regular
