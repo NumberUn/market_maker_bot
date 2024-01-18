@@ -20,11 +20,6 @@ class MarketFinder:
             return []
 
     @try_exc_regular
-    def change_order(self, deal, coin, order_id):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.multibot.change_maker_order(deal, coin, order_id))
-
-    @try_exc_regular
     def amend_order(self, deal, coin, order_id):
         loop = asyncio.get_event_loop()
         loop.create_task(self.multibot.amend_maker_order(deal, coin, order_id))
@@ -40,16 +35,16 @@ class MarketFinder:
         loop.create_task(self.multibot.new_maker_order(deal, coin))
 
     @try_exc_regular
-    def check_exchanges(self, exchange, exchange_buy, exchange_sell, client_buy, client_sell, coin):
-        if exchange not in [exchange_buy, exchange_sell]:
+    def check_exchanges(self, exchange, ex_buy, ex_sell, client_buy, client_sell, coin):
+        if exchange not in [ex_buy, ex_sell]:
             return False
-        if self.mm_exchange not in [exchange_buy, exchange_sell]:
+        if self.mm_exchange not in [ex_buy, ex_sell]:
             return False
-        if exchange_buy == exchange_sell:
+        if ex_buy == ex_sell:
             return False
         if buy_mrkt := client_buy.markets.get(coin):
             if sell_mrkt := client_sell.markets.get(coin):
-                return {'buy_mrkt': buy_mrkt, 'sell_mrkt': sell_mrkt}
+                return {'buy': buy_mrkt, 'sell': sell_mrkt}
         return False
 
     @try_exc_regular
@@ -66,49 +61,67 @@ class MarketFinder:
     async def count_one_coin(self, coin, exchange):
         buy_deals = []
         sell_deals = []
-        for exchange_buy, client_buy in self.clients_with_names.items():
-            for exchange_sell, client_sell in self.clients_with_names.items():
-                markets = self.check_exchanges(exchange, exchange_buy, exchange_sell, client_buy, client_sell, coin)
+        for ex_buy, client_buy in self.clients_with_names.items():
+            for ex_sell, client_sell in self.clients_with_names.items():
+                markets = self.check_exchanges(exchange, ex_buy, ex_sell, client_buy, client_sell, coin)
                 if not markets:
                     continue
-                ob_buy = client_buy.get_orderbook(markets['buy_mrkt'])
-                ob_sell = client_sell.get_orderbook(markets['sell_mrkt'])
+                ob_buy = client_buy.get_orderbook(markets['buy'])
+                ob_sell = client_sell.get_orderbook(markets['sell'])
                 if not self.check_orderbooks():
                     continue
                 # BUY SIDE COUNTINGS
-                if exchange_buy == self.mm_exchange:
-                    tick = client_buy.instruments[markets['buy_mrkt']]['tick_size']
-                    buy_range = [ob_buy['bids'][0][0] + tick, ob_buy['asks'][0][0] - tick]
-                    fees = self.maker_fees[exchange_buy] + self.taker_fees[exchange_sell]
-                    zero_profit_buy_px = ob_sell['bids'][2][0] * (1 - fees)
-                    if zero_profit_buy_px > buy_range[1]:
-                        buy_deals.append({'target': ob_sell['bids'][2],
-                                          'range': buy_range,
-                                          'op_ex': exchange_sell,
-                                          'fees': fees})
-                    elif buy_range[0] < zero_profit_buy_px < buy_range[1]:
-                        buy_range = [buy_range[0], zero_profit_buy_px]
-                        buy_deals.append({'target': ob_sell['bids'][2],
-                                          'range': buy_range,
-                                          'op_ex': exchange_sell,
-                                          'fees': fees})
+                if ex_buy == self.mm_exchange:
+                    tick = client_buy.instruments[markets['buy']]['tick_size']
+                    best_price = ob_buy['bids'][0][0] + tick
+                    worst_price = ob_buy['asks'][0][0] - tick
+                    if max_size_usd := self.multibot.if_tradable(ex_buy,
+                                                                 ex_sell,
+                                                                 markets['buy'],
+                                                                 markets['sell'],
+                                                                 buy_px=best_price,
+                                                                 sell_px=ob_sell['bids'][2][0]):
+                        max_size_coin = max_size_usd / best_price
+                        fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
+                        zero_profit_buy_px = ob_sell['bids'][2][0] * (1 - fees)
+                        if zero_profit_buy_px >= worst_price:
+                            buy_deals.append({'fees': fees,
+                                              'op_ex': ex_sell,
+                                              'target': ob_sell['bids'][2],
+                                              'max_size_coin': max_size_coin,
+                                              'range': [best_price, worst_price]})
+                        elif best_price <= zero_profit_buy_px <= worst_price:
+                            buy_deals.append({'fees': fees,
+                                              'op_ex': ex_sell,
+                                              'target': ob_sell['bids'][2],
+                                              'max_size_coin': max_size_coin,
+                                              'range': [best_price, zero_profit_buy_px]})
                 # SELL SIDE COUNTINGS
-                if exchange_sell == self.mm_exchange:
-                    tick = client_sell.instruments[markets['sell_mrkt']]['tick_size']
-                    sell_range = [ob_sell['asks'][0][0] - tick, ob_sell['bids'][0][0] + tick]
-                    fees = self.maker_fees[exchange_sell] + self.taker_fees[exchange_buy]
-                    zero_profit_sell_px = ob_buy['asks'][2][0] * (1 + fees)
-                    if zero_profit_sell_px < sell_range[1]:
-                        sell_deals.append({'target': ob_buy['asks'][2],
-                                           'range': sell_range,
-                                           'op_ex': exchange_buy,
-                                           'fees': fees})
-                    elif sell_range[0] > zero_profit_sell_px > sell_range[1]:
-                        sell_range = [sell_range[0], zero_profit_sell_px]
-                        sell_deals.append({'target': ob_buy['asks'][2],
-                                           'range': sell_range,
-                                           'op_ex': exchange_buy,
-                                           'fees': fees})
+                if ex_sell == self.mm_exchange:
+                    tick = client_sell.instruments[markets['sell']]['tick_size']
+                    best_price = ob_sell['asks'][0][0] - tick
+                    worst_price = ob_sell['bids'][0][0] + tick
+                    if max_size_usd := self.multibot.if_tradable(ex_buy,
+                                                                 ex_sell,
+                                                                 markets['buy'],
+                                                                 markets['sell'],
+                                                                 sell_px=best_price,
+                                                                 buy_px=ob_buy['asks'][2][0]):
+                        max_size_coin = max_size_usd / best_price
+                        fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
+                        zero_profit_sell_px = ob_buy['asks'][2][0] * (1 + fees)
+                        if zero_profit_sell_px <= worst_price:
+                            sell_deals.append({'fees': fees,
+                                               'op_ex': ex_buy,
+                                               'target': ob_buy['asks'][2],
+                                               'max_size_coin': max_size_coin,
+                                               'range': [best_price, worst_price]})
+                        elif best_price >= zero_profit_sell_px >= worst_price:
+                            sell_deals.append({'fees': fees,
+                                               'op_ex': ex_buy,
+                                               'target': ob_buy['asks'][2],
+                                               'max_size_coin': max_size_coin,
+                                               'range': [best_price, zero_profit_sell_px]})
 
         self.choose_maker_order(sell_deals, buy_deals, coin)
 
@@ -119,27 +132,29 @@ class MarketFinder:
         if buy_deals:
             buy_low = max([x['range'][0] for x in buy_deals])
             buy_top = min([x['range'][1] for x in buy_deals])
-            if buy_low > buy_top: # TODO research if its possible at all
+            if buy_low > buy_top:  # TODO research if its possible at all
                 if active_deal:
                     self.delete_order(coin, active_deal[0])
             else:
                 price = (buy_low + buy_top) / 2
                 sell_price = buy_deals[0]['target'][0]
+                size = min(buy_deals[0]['max_size_coin'], buy_deals[0]['target'][1])
                 profit = (sell_price - price) / price - buy_deals[0]['fees']
-                buy_deal = {'side': 'buy', 'price': price, 'coin': coin,
+                buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin,
                             'profit': profit, 'range': [buy_low, buy_top]}
         if sell_deals:
             sell_low = max([x['range'][0] for x in sell_deals])
             sell_top = min([x['range'][1] for x in sell_deals])
-            if sell_low < sell_top: # TODO research if its possible at all
+            if sell_low < sell_top:  # TODO research if its possible at all
                 if active_deal:
                     self.delete_order(coin, active_deal[0])
             else:
                 price = (sell_low + sell_top) / 2
                 buy_price = sell_deals[0]['target'][0]
+                size = min(sell_deals[0]['max_size_coin'], sell_deals[0]['target'][1])
                 profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
-                sell_deal = {'side': 'sell', 'price': price, 'coin': coin,
-                            'profit': profit, 'range': [sell_low, sell_top]}
+                sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin,
+                             'profit': profit, 'range': [sell_low, sell_top]}
         if sell_deal and buy_deal:
             top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
         elif sell_deal and not buy_deal:
@@ -158,7 +173,8 @@ class MarketFinder:
                     self.amend_order(top_deal, coin, active_deal[0])
                     print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
                 elif top_deal['side'] == 'sell':
-                    self.change_order(top_deal, coin, active_deal[0])
+                    self.delete_order(coin, active_deal[0])
+                    self.new_order(top_deal, coin)
                     print(f"CHANGE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
             else:
                 if not sell_deal:
@@ -171,7 +187,8 @@ class MarketFinder:
                     self.amend_order(top_deal, coin, active_deal[0])
                     print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
                 elif top_deal['side'] == 'buy':
-                    self.change_order(top_deal, coin, active_deal[0])
+                    self.delete_order(coin, active_deal[0])
+                    self.new_order(top_deal, coin)
                     print(f"CHANGE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
         else:
             self.new_order(top_deal, coin)
