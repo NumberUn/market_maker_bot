@@ -123,6 +123,10 @@ class MarketFinder:
                                                'max_size_coin': max_size_coin,
                                                'range': [best_price, zero_profit_sell_px]})
 
+        for deal in sell_deals:
+            print(f"BUY DEAL: {deal}")
+        for deal in buy_deals:
+            print(f"SELL DEAL: {deal}")
         self.choose_maker_order(sell_deals, buy_deals, coin)
 
     def choose_maker_order(self, sell_deals, buy_deals, coin):
@@ -133,6 +137,7 @@ class MarketFinder:
             buy_low = max([x['range'][0] for x in buy_deals])
             buy_top = min([x['range'][1] for x in buy_deals])
             if buy_low > buy_top:  # TODO research if its possible at all
+                print(f"buy_low > buy_top!!!!!! CHECK BUY DEALS\n\n\n")
                 if active_deal:
                     self.delete_order(coin, active_deal[0])
             else:
@@ -146,6 +151,7 @@ class MarketFinder:
             sell_low = max([x['range'][0] for x in sell_deals])
             sell_top = min([x['range'][1] for x in sell_deals])
             if sell_low < sell_top:  # TODO research if its possible at all
+                print(f"sell_low < sell_top!!!!!! CHECK SELL DEALS\n\n\n")
                 if active_deal:
                     self.delete_order(coin, active_deal[0])
             else:
@@ -161,6 +167,8 @@ class MarketFinder:
             top_deal = sell_deal
         else:
             top_deal = buy_deal
+        print(f"TOP DEAL: {top_deal}")
+        return
         if active_deal:
             if active_deal[1]['side'] == 'buy':
                 if not buy_deal:
