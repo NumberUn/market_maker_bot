@@ -68,7 +68,7 @@ class MarketFinder:
                     continue
                 ob_buy = client_buy.get_orderbook(markets['buy'])
                 ob_sell = client_sell.get_orderbook(markets['sell'])
-                if not self.check_orderbooks():
+                if not self.check_orderbooks(ob_buy, ob_sell):
                     continue
                 # BUY SIDE COUNTINGS
                 if ex_buy == self.mm_exchange:
