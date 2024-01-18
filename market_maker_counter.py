@@ -1,9 +1,5 @@
 import asyncio
-import uuid
-from datetime import datetime
 from core.wrappers import try_exc_regular, try_exc_async
-import time
-import json
 
 
 class MarketFinder:
@@ -15,52 +11,56 @@ class MarketFinder:
         self.clients_with_names = clients_with_names
         self.taker_fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
         self.maker_fees = {x: y.maker_fee for x, y in self.clients_with_names.items()}
+        self.mm_exchange = self.multibot.mm_exchange
 
     def get_active_deal(self, coin):
-        for exchange in self.multibot.open_orders:
-            if order := self.multibot.open_orders[exchange].get(coin):
-                return order
-            else:
-                return False
+        if order := self.multibot.open_orders.get(coin):
+            return order
+        else:
+            return []
 
     @try_exc_regular
-    def get_pings(self, ob_buy, ob_sell):
-        now_ts = time.time()
+    def change_order(self, deal, coin, order_id):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.multibot.change_maker_order(deal, coin, order_id))
+
+    @try_exc_regular
+    def amend_order(self, deal, coin, order_id):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.multibot.amend_maker_order(deal, coin, order_id))
+
+    @try_exc_regular
+    def delete_order(self, coin, order_id):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.multibot.delete_maker_order(coin, order_id))
+
+    @try_exc_regular
+    def new_order(self, deal, coin):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.multibot.new_maker_order(deal, coin))
+
+    @try_exc_regular
+    def check_exchanges(self, exchange, exchange_buy, exchange_sell, client_buy, client_sell, coin):
+        if exchange not in [exchange_buy, exchange_sell]:
+            return False
+        if self.mm_exchange not in [exchange_buy, exchange_sell]:
+            return False
+        if exchange_buy == exchange_sell:
+            return False
+        if buy_mrkt := client_buy.markets.get(coin):
+            if sell_mrkt := client_sell.markets.get(coin):
+                return {'buy_mrkt': buy_mrkt, 'sell_mrkt': sell_mrkt}
+        return False
+
+    @try_exc_regular
+    def check_orderbooks(self, ob_buy, ob_sell):
         if not ob_buy or not ob_sell:
-            return None
+            return False
         if not ob_buy.get('bids') or not ob_buy.get('asks'):
-            return None
+            return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
-            return None
-        if isinstance(ob_buy['timestamp'], float):
-            ts_buy = now_ts - ob_buy['timestamp']
-        else:
-            ts_buy = now_ts - ob_buy['timestamp'] / 1000
-        if isinstance(ob_sell['timestamp'], float):
-            ts_sell = now_ts - ob_sell['timestamp']
-        else:
-            ts_sell = now_ts - ob_sell['timestamp'] / 1000
-        return [ts_buy, ts_sell]
-
-    @try_exc_regular
-    def change_order(self, deal, exchange, order_id):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.multibot.change_maker_order(deal, exchange, order_id))
-
-    @try_exc_regular
-    def amend_order(self, deal, exchange, order_id):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.multibot.amend_maker_order(deal, exchange, order_id))
-
-    @try_exc_regular
-    def delete_order(self, exchange, order_id):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.multibot.delete_maker_order(exchange, order_id))
-
-    @try_exc_regular
-    def new_order(self, deal, exchange):
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.multibot.new_maker_order(deal, exchange))
+            return False
+        return True
 
     @try_exc_async
     async def count_one_coin(self, coin, exchange):
@@ -68,108 +68,115 @@ class MarketFinder:
         sell_deals = []
         for exchange_buy, client_buy in self.clients_with_names.items():
             for exchange_sell, client_sell in self.clients_with_names.items():
-                if exchange_buy == exchange_sell:
+                markets = self.check_exchanges(exchange, exchange_buy, exchange_sell, client_buy, client_sell, coin)
+                if not markets:
                     continue
-                if exchange not in [exchange_buy, exchange_sell]:
+                ob_buy = client_buy.get_orderbook(markets['buy_mrkt'])
+                ob_sell = client_sell.get_orderbook(markets['sell_mrkt'])
+                if not self.check_orderbooks():
                     continue
-                if buy_mrkt := client_buy.markets.get(coin):
-                    if sell_mrkt := client_sell.markets.get(coin):
-                        ob_buy = client_buy.get_orderbook(buy_mrkt)
-                        ob_sell = client_sell.get_orderbook(sell_mrkt)
-                        pings = self.get_pings()
-                        if not pings:
-                            continue
-                        ts_buy = pings[0]
-                        ts_sell = pings[1]
-                        # BUY SIDE COUNTINGS
-                        if ts_buy < ts_sell and ts_buy < 0.050:
-                            tick = client_buy.instruments[buy_mrkt]['tick_size']
-                            buy_range = [ob_buy['bids'][0][0] + tick, ob_buy['asks'][0][0] - tick]
-                            sell_px = ob_sell['bids'][2][0]
-                            fees = self.maker_fees[exchange_buy] + self.taker_fees[exchange_sell]
-                            zero_profit_buy_px = sell_px * (1 - fees)
-                            if zero_profit_buy_px > buy_range[1]:
-                                buy_deals.append({'mrkt': buy_mrkt, 'target': ob_sell['bids'][2],
-                                                  'range': buy_range, 'ex': exchange_buy,
-                                                  'op_ex': exchange_sell})
-                            elif buy_range[0] < zero_profit_buy_px < buy_range[1]:
-                                buy_range = [buy_range[0], zero_profit_buy_px]
-                                buy_deals.append({'mrkt': buy_mrkt, 'target': ob_sell['bids'][2],
-                                                  'range': buy_range, 'ex': exchange_buy,
-                                                  'op_ex': exchange_sell})
-                            # else:
-                            #     if active_deal and active_deal['side'] == 'buy':
-                            #         self.delete_order(exchange_buy, active_deal['order_id'])
-                            #     continue
-                            # deals.append({'side': 'buy', 'mrkt': buy_mrkt, 'price': buy_px,
-                            #               'sz': ob_sell['bids'][2][1], 'range': buy_range})
-                            # if active_deal:
-                            #     if active_deal['side'] == 'buy':
-                            #         if buy_range[0] < active_deal['price'] < buy_range[1]:
-                            #             continue
-                            #         else:
-                            #             self.amend_order(deal, exchange_buy, active_deal['order_id'])
-                            #     else:
-                            #         self.change_order(deal, exchange_buy, active_deal['order_id'])
-                            # else:
-                            #     self.new_order(deal, exchange_buy)
-                        # SELL SIDE COUNTINGS
-                        if ts_buy > ts_sell and ts_sell < 0.050:
-                            tick = client_sell.instruments[sell_mrkt]['tick_size']
-                            sell_range = [ob_sell['asks'][0][0] - tick, ob_sell['bids'][0][0] + tick]
-                            buy_px = ob_buy['asks'][2][0]
-                            fees = self.maker_fees[exchange_sell] + self.taker_fees[exchange_buy]
-                            zero_profit_sell_px = buy_px * (1 + fees)
-                            if zero_profit_sell_px < sell_range[1]:
-                                sell_deals.append({'mrkt': sell_mrkt,'target': ob_buy['asks'][2],
-                                                   'range': sell_range, 'ex': exchange_sell,
-                                                   'op_ex': exchange_buy})
-                            elif sell_range[0] > zero_profit_sell_px > sell_range[1]:
-                                sell_range = [sell_range[0], zero_profit_sell_px]
-                                sell_deals.append({'mrkt': sell_mrkt, 'target': ob_buy['asks'][2],
-                                                   'range': sell_range, 'ex': exchange_sell,
-                                                   'op_ex': exchange_buy})
-                            # else:
-                            #     if active_deal and active_deal['side'] == 'sell':
-                            #         self.delete_order(exchange_sell, active_deal['order_id'])
-                            #     continue
-                            # if sell_px:
-                            #     deals.append({'side': 'sell', 'mrkt': sell_mrkt, 'price': sell_px,
-                            #                   'sz': ob_buy['asks'][2][1], 'range': sell_range})
+                # BUY SIDE COUNTINGS
+                if exchange_buy == self.mm_exchange:
+                    tick = client_buy.instruments[markets['buy_mrkt']]['tick_size']
+                    buy_range = [ob_buy['bids'][0][0] + tick, ob_buy['asks'][0][0] - tick]
+                    fees = self.maker_fees[exchange_buy] + self.taker_fees[exchange_sell]
+                    zero_profit_buy_px = ob_sell['bids'][2][0] * (1 - fees)
+                    if zero_profit_buy_px > buy_range[1]:
+                        buy_deals.append({'target': ob_sell['bids'][2],
+                                          'range': buy_range,
+                                          'op_ex': exchange_sell,
+                                          'fees': fees})
+                    elif buy_range[0] < zero_profit_buy_px < buy_range[1]:
+                        buy_range = [buy_range[0], zero_profit_buy_px]
+                        buy_deals.append({'target': ob_sell['bids'][2],
+                                          'range': buy_range,
+                                          'op_ex': exchange_sell,
+                                          'fees': fees})
+                # SELL SIDE COUNTINGS
+                if exchange_sell == self.mm_exchange:
+                    tick = client_sell.instruments[markets['sell_mrkt']]['tick_size']
+                    sell_range = [ob_sell['asks'][0][0] - tick, ob_sell['bids'][0][0] + tick]
+                    fees = self.maker_fees[exchange_sell] + self.taker_fees[exchange_buy]
+                    zero_profit_sell_px = ob_buy['asks'][2][0] * (1 + fees)
+                    if zero_profit_sell_px < sell_range[1]:
+                        sell_deals.append({'target': ob_buy['asks'][2],
+                                           'range': sell_range,
+                                           'op_ex': exchange_buy,
+                                           'fees': fees})
+                    elif sell_range[0] > zero_profit_sell_px > sell_range[1]:
+                        sell_range = [sell_range[0], zero_profit_sell_px]
+                        sell_deals.append({'target': ob_buy['asks'][2],
+                                           'range': sell_range,
+                                           'op_ex': exchange_buy,
+                                           'fees': fees})
+
+        self.choose_maker_order(sell_deals, buy_deals, coin)
+
     def choose_maker_order(self, sell_deals, buy_deals, coin):
         active_deal = self.get_active_deal(coin)
-        if buy_deals and not sell_deals:
+        buy_deal = None
+        sell_deal = None
+        if buy_deals:
             buy_low = max([x['range'][0] for x in buy_deals])
             buy_top = min([x['range'][1] for x in buy_deals])
-            if buy_low > buy_top:
+            if buy_low > buy_top: # TODO research if its possible at all
                 if active_deal:
-                    self.delete_order(buy_deals[0]['ex'], active_deal['order_id'])
-                    print(buy_deals)
-                return
-            buy_px = (buy_low + buy_top) / 2
-            if active_deal:
-                if active_deal['side'] == 'buy':
-                    if buy_low < active_deal['price'] < buy_top:
-                        return
-                    else:
-                        self.amend_order(deal, exchange_sell, active_deal['order_id'])
-                else:
-                    self.change_order(deal, exchange_sell, active_deal['order_id'])
+                    self.delete_order(coin, active_deal[0])
             else:
-                self.new_order(deal, exchange_sell)
+                price = (buy_low + buy_top) / 2
+                sell_price = buy_deals[0]['target'][0]
+                profit = (sell_price - price) / price - buy_deals[0]['fees']
+                buy_deal = {'side': 'buy', 'price': price, 'coin': coin,
+                            'profit': profit, 'range': [buy_low, buy_top]}
+        if sell_deals:
+            sell_low = max([x['range'][0] for x in sell_deals])
+            sell_top = min([x['range'][1] for x in sell_deals])
+            if sell_low < sell_top: # TODO research if its possible at all
+                if active_deal:
+                    self.delete_order(coin, active_deal[0])
+            else:
+                price = (sell_low + sell_top) / 2
+                buy_price = sell_deals[0]['target'][0]
+                profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
+                sell_deal = {'side': 'sell', 'price': price, 'coin': coin,
+                            'profit': profit, 'range': [sell_low, sell_top]}
+        if sell_deal and buy_deal:
+            top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
+        elif sell_deal and not buy_deal:
+            top_deal = sell_deal
+        else:
+            top_deal = buy_deal
+        if active_deal:
+            if active_deal[1]['side'] == 'buy':
+                if not buy_deal:
+                    self.delete_order(coin, active_deal[0])
+                    print(f"DELETE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}")
+                elif buy_deal['range'][0] < active_deal[1]['price'] < buy_deal['range'][1]:
+                    print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
+                    return
+                elif top_deal['side'] == 'buy':
+                    self.amend_order(top_deal, coin, active_deal[0])
+                    print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+                elif top_deal['side'] == 'sell':
+                    self.change_order(top_deal, coin, active_deal[0])
+                    print(f"CHANGE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+            else:
+                if not sell_deal:
+                    self.delete_order(coin, active_deal[0])
+                    print(f"DELETE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+                elif sell_deal['range'][0] < active_deal[1]['price'] < sell_deal['range'][1]:
+                    print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
+                    return
+                elif top_deal['side'] == 'sell':
+                    self.amend_order(top_deal, coin, active_deal[0])
+                    print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+                elif top_deal['side'] == 'buy':
+                    self.change_order(top_deal, coin, active_deal[0])
+                    print(f"CHANGE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+        else:
+            self.new_order(top_deal, coin)
+            print(f"CREATE NEW ORDER {coin} {top_deal}\n")
 
 
 if __name__ == '__main__':
     pass
-    # from clients_markets_data import coins_symbols_client
-    # # from clients-http.kraken import KrakenClient
-    # # from clients-http.binance import BinanceClient
-    # # from clients-http.dydx import DydxClient
-    # # from clients-http.apollox import ApolloxClient
-    #
-    # clients_list = [DydxClient(), KrakenClient(), BinanceClient(), ApolloxClient()]  # , Bitfinex()]  # ,
-    # Bitspay(), Ascendex()]
-    # markets = coins_symbols_client(clients_list)  # {coin: {symbol:client(),...},...}
-    # finder = ArbitrageFinder([x for x in markets.keys()], clients_list)
-    # data = {}
-    # finder.arbitrage(data)

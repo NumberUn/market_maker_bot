@@ -15,7 +15,7 @@ import aiohttp
 from arbitrage_finder import ArbitrageFinder, AP
 from market_maker_counter import MarketFinder
 from clients.core.all_clients import ALL_CLIENTS
-from clients_markets_data import Clients_markets_data
+from clients_markets_data import ClientsMarketData
 from core.database import DB
 from core.rabbit import Rabbit
 from core.enums import AP_Status
@@ -39,7 +39,8 @@ class MultiBot:
                  'base_launch_config', 'instance_markets_amount', 'markets_data',
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
-                 'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders']
+                 'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
+                 'mm_exchange']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -60,6 +61,7 @@ class MultiBot:
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
         self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
+        self.mm_exchange = self.setts["MM_EXCHANGE"]
         self.clients = []
         self.telegram = Telegram()
         for exchange in self.exchanges:
@@ -74,7 +76,7 @@ class MultiBot:
         self.start_time = datetime.utcnow().timestamp()
         self.available_balances = {}
         self.positions = {}
-        self.clients_markets_data = Clients_markets_data(self.clients, self.setts['INSTANCE_NUM'],
+        self.clients_markets_data = ClientsMarketData(self.clients, self.setts['INSTANCE_NUM'],
                                                          self.instance_markets_amount)
         self.markets = self.clients_markets_data.get_instance_markets()
         self.markets_data = self.clients_markets_data.get_clients_data()
@@ -82,8 +84,7 @@ class MultiBot:
         self.base_launch_config = self.get_default_launch_config()
         self._loop = asyncio.new_event_loop()
         self.rabbit = Rabbit(self._loop)
-        self.open_orders = {'EXCHANGE_NAME': {'COIN': ['id', "ORDER_DATA"],
-                                              'OPEN_ORDERS': ['COIN_1', 'COIN_2']}}
+        self.open_orders = {'COIN': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
 
     @try_exc_regular
@@ -135,19 +136,19 @@ class MultiBot:
         loop.run_until_complete(func())
 
     @try_exc_async
-    async def amend_maker_order(self, deal, exchange, order_id):
+    async def amend_maker_order(self, deal, coin, order_id):
         pass
 
     @try_exc_async
-    async def change_maker_order(self, deal, exchange, order_id):
+    async def change_maker_order(self, deal, coin, order_id):
         pass
 
     @try_exc_async
-    async def delete_maker_order(self, exchange, order_id):
+    async def delete_maker_order(self, coin, order_id):
         pass
 
     @try_exc_async
-    async def new_maker_order(self, exchange, deal):
+    async def new_maker_order(self, deal, coin):
         pass
 
     @try_exc_async

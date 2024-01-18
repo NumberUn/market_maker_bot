@@ -10,7 +10,8 @@ config = configparser.ConfigParser()
 config.read(sys.argv[1], "utf-8")
 
 
-class Clients_markets_data:
+class ClientsMarketData:
+
     def __init__(self, clients_list, instance_num, instance_markets_amount):
         self.instance_num = int(instance_num)
         self.clients_list = clients_list
@@ -90,7 +91,7 @@ def main():
     for client in clients:
         print(client.__class__.__name__, end=" ")
 
-    clients_markets_data = Clients_markets_data(clients)
+    clients_markets_data = ClientsMarketData(clients)
     print(clients_markets_data.all_markets)
     print(clients_markets_data.clients_data)
 
