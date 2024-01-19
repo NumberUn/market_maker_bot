@@ -123,12 +123,13 @@ class MarketFinder:
                                                'max_size_coin': max_size_coin,
                                                'range': [best_price, zero_profit_sell_px]})
 
-        print(f"COUNTINGS FOR {coin}")
-        for deal in sell_deals:
-            print(f"BUY DEAL: {deal}")
-        for deal in buy_deals:
-            print(f"SELL DEAL: {deal}")
-        self.choose_maker_order(sell_deals, buy_deals, coin)
+        if sell_deals or buy_deals:
+            print(f"COUNTINGS FOR {coin}")
+            for deal in sell_deals:
+                print(f"BUY DEAL: {deal}")
+            for deal in buy_deals:
+                print(f"SELL DEAL: {deal}")
+            self.choose_maker_order(sell_deals, buy_deals, coin)
 
     def choose_maker_order(self, sell_deals, buy_deals, coin):
         active_deal = self.get_active_deal(coin)
