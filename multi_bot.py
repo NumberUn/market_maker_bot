@@ -261,10 +261,7 @@ class MultiBot:
     def if_tradable(self, buy_ex, sell_ex, buy_mrkt, sell_mrkt, buy_px, sell_px):
         avl_sz_buy_usd = self._get_available_balance(buy_ex, buy_mrkt, 'buy')
         avl_sz_sell_usd = self._get_available_balance(sell_ex, sell_mrkt, 'sell')
-        print(f"BUY: {avl_sz_buy_usd}")
-        print(f"SELL: {avl_sz_sell_usd}")
         if avl_sz_buy_usd == 'updating' or avl_sz_sell_usd == 'updating':
-            print(f"updating")
             return False
         max_deal_size_usd = min(avl_sz_buy_usd, avl_sz_sell_usd, self.max_order_size_usd)
         print(f"{max_deal_size_usd=}")
@@ -284,6 +281,7 @@ class MultiBot:
     def update_all_av_balances(self):
         for exchange, client in self.clients_with_names.items():
             self.available_balances.update({exchange: client.get_available_balance()})
+            print(f"UPDATED {exchange} avl balances: {client.get_available_balance()}")
 
     @try_exc_regular
     def update_all_positions_aggregates(self):
