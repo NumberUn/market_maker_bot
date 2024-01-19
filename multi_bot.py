@@ -264,10 +264,9 @@ class MultiBot:
         if avl_sz_buy_usd == 'updating' or avl_sz_sell_usd == 'updating':
             return False
         max_deal_size_usd = min(avl_sz_buy_usd, avl_sz_sell_usd, self.max_order_size_usd)
-        print(f"{max_deal_size_usd=}")
-        if not self.check_min_size(buy_ex, buy_mrkt, avl_sz_buy_usd, buy_px, 'buy', 'Bot work'):
+        if not self.check_min_size(buy_ex, buy_mrkt, avl_sz_buy_usd, buy_px):
             return False
-        if not self.check_min_size(sell_ex, sell_mrkt, avl_sz_sell_usd, sell_px, 'sell', 'Bot work'):
+        if not self.check_min_size(sell_ex, sell_mrkt, avl_sz_sell_usd, sell_px):
             return False
         return max_deal_size_usd
 
