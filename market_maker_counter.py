@@ -81,6 +81,7 @@ class MarketFinder:
                                                                  markets['sell'],
                                                                  buy_px=best_price,
                                                                  sell_px=ob_sell['bids'][2][0]):
+                        print(f"BUY TRADABLE")
                         max_size_coin = max_size_usd / best_price
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         zero_profit_buy_px = ob_sell['bids'][2][0] * (1 - fees)
@@ -107,6 +108,7 @@ class MarketFinder:
                                                                  markets['sell'],
                                                                  sell_px=best_price,
                                                                  buy_px=ob_buy['asks'][2][0]):
+                        print(f"SELL TRADABLE")
                         max_size_coin = max_size_usd / best_price
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         zero_profit_sell_px = ob_buy['asks'][2][0] * (1 + fees)
@@ -127,7 +129,7 @@ class MarketFinder:
             print(f"BUY DEAL: {deal}")
         for deal in buy_deals:
             print(f"SELL DEAL: {deal}")
-        self.choose_maker_order(sell_deals, buy_deals, coin)
+        # self.choose_maker_order(sell_deals, buy_deals, coin)
 
     def choose_maker_order(self, sell_deals, buy_deals, coin):
         active_deal = self.get_active_deal(coin)

@@ -261,9 +261,13 @@ class MultiBot:
     def if_tradable(self, buy_ex, sell_ex, buy_mrkt, sell_mrkt, buy_px, sell_px):
         avl_sz_buy_usd = self._get_available_balance(buy_ex, buy_mrkt, 'buy')
         avl_sz_sell_usd = self._get_available_balance(sell_ex, sell_mrkt, 'sell')
+        print(f"BUY: {avl_sz_buy_usd}")
+        print(f"SELL: {avl_sz_sell_usd}")
         if avl_sz_buy_usd == 'updating' or avl_sz_sell_usd == 'updating':
+            print(f"updating")
             return False
         max_deal_size_usd = min(avl_sz_buy_usd, avl_sz_sell_usd, self.max_order_size_usd)
+        print(f"{max_deal_size_usd=}")
         if not self.check_min_size(buy_ex, buy_mrkt, avl_sz_buy_usd, buy_px, 'buy', 'Bot work'):
             return False
         if not self.check_min_size(sell_ex, sell_mrkt, avl_sz_sell_usd, sell_px, 'sell', 'Bot work'):

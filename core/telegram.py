@@ -77,7 +77,7 @@ class Telegram:
         total_balance = 0
         total_position = 0
         abs_total_position = 0
-
+        print(f"{multibot.available_balances=}")
         for exchange, available_balance in multibot.available_balances.items():
             balance, total_pos, abs_pos, markets,*_ = multibot.positions[exchange].values()
             message += f"   EXCHANGE: {exchange}\n"
