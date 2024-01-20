@@ -189,7 +189,7 @@ class MarketFinder:
                     print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     return
                 elif top_deal['side'] == 'buy':
-                    if coin not in self.multibot.amend_requests:
+                    if coin not in self.multibot.requests_in_progress:
                         self.amend_order(top_deal, coin, active_deal[0])
                         print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
                 elif top_deal['side'] == 'sell':
@@ -204,7 +204,7 @@ class MarketFinder:
                     print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     return
                 elif top_deal['side'] == 'sell':
-                    if coin not in self.multibot.amend_requests:
+                    if coin not in self.multibot.requests_in_progress:
                         self.amend_order(top_deal, coin, active_deal[0])
                         print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
                 elif top_deal['side'] == 'buy':
@@ -212,8 +212,9 @@ class MarketFinder:
                     self.new_order(top_deal, coin)
                     print(f"CHANGE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
         else:
-            self.new_order(top_deal, coin)
-            print(f"CREATE NEW ORDER {coin} {top_deal}\n")
+            if coin not in self.multibot.requests_in_progress:
+                self.new_order(top_deal, coin)
+                print(f"CREATE NEW ORDER {coin} {top_deal}\n")
 
 
 if __name__ == '__main__':
