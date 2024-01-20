@@ -153,7 +153,7 @@ class MultiBot:
     async def new_maker_order(self, deal, coin):
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        client_id = 'maker_' + coin + '_' + str(randint(1000, 10000000))
+        client_id = 'maker-' + coin + '-' + str(randint(1000, 10000000))
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
         deal.update({'market': market,
                      'client_id': client_id,
@@ -202,7 +202,7 @@ class MultiBot:
                     best_client = client
                     best_ob = ob
         if best_price:
-            client_id = 'taker_' + deal['coin'] + '_' + str(randint(1000, 10000000))
+            client_id = 'taker-' + deal['coin'] + '-' + str(randint(1000, 10000000))
             price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
             best_client.async_tasks.append(['create_order', {'price': price,
                                                              'size': size,
