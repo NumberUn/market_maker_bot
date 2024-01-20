@@ -204,9 +204,49 @@ class MultiBot:
             for i in range(0, 50):
                 if resp := best_client.responses.get(client_id):
                     best_client.responses.pop(client_id)
+                    results = self.sort_deal_response_data(deal, resp)
+                    self.create_and_send_deal_report_message(results)
                     # TODO DEAL REPORT
                     return
                 await asyncio.sleep(0.1)
+            self.telegram.send_message(f"ALERT! TAKER DEAL DIDN'T PLACED\n{deal}", TG_Groups.MainGroup)
+
+    @try_exc_regular
+    def create_and_send_deal_report_message(self, results: dict):
+        message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}'
+        for key, value in results.items():
+            message += key.upper() + ': ' + value + '\n'
+        self.telegram.send_message(message, TG_Groups.MainGroup)
+
+    @try_exc_regular
+    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict) -> dict:
+        results = dict()
+        results.update({'coin': maker_deal['coin'],
+                        'taker ping': taker_deal['create_order_time'],
+                        'maker-taker ping': maker_deal['timestamp'] - taker_deal['timestamp'],
+                        'taker exchange': taker_deal['exchange_name'],
+                        'maker exchange': self.mm_exchange,
+                        'maker side': maker_deal['side'],
+                        'maker price': maker_deal['price'],
+                        'maker size': maker_deal['size'],
+                        'taker price': taker_deal['price'],
+                        'taker size': taker_deal['size'],
+                        'taker fee': self.clients_with_names[taker_deal['exchange_name']].taker_fee,
+                        'maker fee': self.clients_with_names[self.mm_exchange].maker_fee})
+        fees = results['taker_fee'] + results['maker_fee']
+        if maker_deal['side'] == 'buy':
+            rel_profit = (results['taker_price'] - results['maker_price']) / results['maker_price'] - fees
+        else:
+            rel_profit = (results['maker_price'] - results['taker_price']) / results['taker_price'] - fees
+        results.update({'relative profit': rel_profit,
+                        'absolute profit coin': rel_profit * results['taker_size'],
+                        'absolute profit usd': rel_profit * results['taker_size'] * results['taker_price'],
+                        'disbalance coin': results['taker_size'] - results['maker_size'],
+                        'disbalance usd': (results['taker_size'] - results['maker_size']) * results['taker_price'],
+                        'total fee usd': fees * results['taker_size']})
+        return results
+
+
 
     @try_exc_async
     async def launch(self):
