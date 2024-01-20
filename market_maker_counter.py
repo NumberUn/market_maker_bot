@@ -211,6 +211,8 @@ class MarketFinder:
                     self.new_order(top_deal, coin)
                     print(f"CHANGE SIDE\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
             else:
+                if active_deal[0] in self.multibot.deleted_orders:
+                    return
                 self.delete_order(coin, active_deal[0])
                 print(f"DELETE\nORDER: {active_deal[0]}")
         else:
