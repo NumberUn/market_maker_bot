@@ -57,88 +57,79 @@ class MarketFinder:
             return False
         return True
 
+    @try_exc_regular
+    def get_range_buy_side(self, ob_buy, mrkt, top_bid, client_buy, active_px):
+        tick = client_buy.instruments[mrkt['buy']]['tick_size']
+        if active_px != top_bid:
+            best_px = top_bid + tick
+        else:
+            best_px = ob_buy['bids'][1][0] + tick
+        if best_px == ob_buy['asks'][0][0]:
+            best_px = top_bid
+            worst_px = best_px
+        else:
+            worst_px = ob_buy['asks'][0][0] - tick
+        return best_px, worst_px
+
+    @try_exc_regular
+    def get_range_sell_side(self, ob_sell, mrkt, top_ask, client_sell, active_px):
+        tick = client_sell.instruments[mrkt['sell']]['tick_size']
+        if active_px != top_ask:
+            best_px = top_ask - tick
+        else:
+            best_px = ob_sell['asks'][1][0] - tick
+        if best_px == ob_sell['bids'][0][0]:
+            best_px = top_ask
+            worst_px = best_px
+        else:
+            worst_px = ob_sell['bids'][0][0] + tick
+        return best_px, worst_px
+
     @try_exc_async
     async def count_one_coin(self, coin, exchange):
         buy_deals = []
         sell_deals = []
         active_deal = self.get_active_deal(coin)
-        active_deal_price = active_deal[1]['price'] if active_deal else 0
+        active_px = active_deal[1]['price'] if active_deal else 0
         for ex_buy, client_buy in self.clients_with_names.items():
             for ex_sell, client_sell in self.clients_with_names.items():
-                markets = self.check_exchanges(exchange, ex_buy, ex_sell, client_buy, client_sell, coin)
-                if not markets:
+                mrkt = self.check_exchanges(exchange, ex_buy, ex_sell, client_buy, client_sell, coin)
+                if not mrkt:
                     continue
-                ob_buy = client_buy.get_orderbook(markets['buy'])
-                ob_sell = client_sell.get_orderbook(markets['sell'])
+                ob_buy = client_buy.get_orderbook(mrkt['buy'])
+                ob_sell = client_sell.get_orderbook(mrkt['sell'])
                 if not self.check_orderbooks(ob_buy, ob_sell):
                     continue
                 # BUY SIDE COUNTINGS
                 if ex_buy == self.mm_exchange:
-                    tick = client_buy.instruments[markets['buy']]['tick_size']
-                    if active_deal_price != ob_buy['bids'][0][0]:
-                        best_price = ob_buy['bids'][0][0] + tick
-                    else:
-                        best_price = ob_buy['bids'][1][0] + tick
-                    if best_price == ob_buy['asks'][0][0]:
-                        best_price = ob_buy['bids'][0][0]
-                        worst_price = best_price
-                    else:
-                        worst_price = ob_buy['asks'][0][0] - tick
-                    if max_size_usd := self.multibot.if_tradable(ex_buy,
-                                                                 ex_sell,
-                                                                 markets['buy'],
-                                                                 markets['sell'],
-                                                                 buy_px=best_price,
-                                                                 sell_px=ob_sell['bids'][2][0]):
-                        max_size_coin = max_size_usd / best_price
+                    top_bid = ob_buy['bids'][0][0]
+                    if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_bid):
+                        best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
+                        max_sz_coin = max_sz_usd / best_px
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         zero_profit_buy_px = ob_sell['bids'][2][0] * (1 - fees)
-                        if zero_profit_buy_px >= worst_price:
-                            buy_deals.append({'fees': fees,
-                                              'op_ex': ex_sell,
-                                              'target': ob_sell['bids'][2],
-                                              'max_size_coin': max_size_coin,
-                                              'range': [best_price, worst_price]})
-                        elif best_price <= zero_profit_buy_px <= worst_price:
-                            buy_deals.append({'fees': fees,
-                                              'op_ex': ex_sell,
-                                              'target': ob_sell['bids'][2],
-                                              'max_size_coin': max_size_coin,
-                                              'range': [best_price, zero_profit_buy_px]})
+                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
+                        if zero_profit_buy_px >= worst_px:
+                            pot_deal.update({'range': [best_px, worst_px], 'target': ob_sell['bids'][2]})
+                            buy_deals.append(pot_deal)
+                        elif best_px <= zero_profit_buy_px <= worst_px:
+                            pot_deal.update({'range': [best_px, zero_profit_buy_px], 'target': ob_sell['bids'][2]})
+                            buy_deals.append(pot_deal)
                 # SELL SIDE COUNTINGS
-                if ex_sell == self.mm_exchange:
-                    tick = client_sell.instruments[markets['sell']]['tick_size']
-                    if active_deal_price != ob_sell['asks'][0][0]:
-                        best_price = ob_sell['asks'][0][0] - tick
-                    else:
-                        best_price = ob_sell['asks'][1][0] - tick
-                    if best_price == ob_sell['bids'][0][0]:
-                        best_price = ob_sell['asks'][0][0]
-                        worst_price = best_price
-                    else:
-                        worst_price = ob_sell['bids'][0][0] + tick
-                    if max_size_usd := self.multibot.if_tradable(ex_buy,
-                                                                 ex_sell,
-                                                                 markets['buy'],
-                                                                 markets['sell'],
-                                                                 sell_px=best_price,
-                                                                 buy_px=ob_buy['asks'][2][0]):
-                        max_size_coin = max_size_usd / best_price
+                elif ex_sell == self.mm_exchange:
+                    top_ask = ob_sell['asks'][0][0]
+                    if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_ask):
+                        best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
+                        max_sz_coin = max_sz_usd / best_px
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         zero_profit_sell_px = ob_buy['asks'][2][0] * (1 + fees)
-                        if zero_profit_sell_px <= worst_price:
-                            sell_deals.append({'fees': fees,
-                                               'op_ex': ex_buy,
-                                               'target': ob_buy['asks'][2],
-                                               'max_size_coin': max_size_coin,
-                                               'range': [worst_price, best_price]})
-                        elif best_price >= zero_profit_sell_px >= worst_price:
-                            sell_deals.append({'fees': fees,
-                                               'op_ex': ex_buy,
-                                               'target': ob_buy['asks'][2],
-                                               'max_size_coin': max_size_coin,
-                                               'range': [zero_profit_sell_px, best_price]})
-
+                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
+                        if zero_profit_sell_px <= worst_px:
+                            pot_deal.update({'range': [worst_px, best_px], 'target': ob_buy['asks'][2]})
+                            sell_deals.append(pot_deal)
+                        elif best_px >= zero_profit_sell_px >= worst_px:
+                            pot_deal.update({'range': [zero_profit_sell_px, best_px], 'target': ob_buy['asks'][2]})
+                            sell_deals.append(pot_deal)
         # if sell_deals or buy_deals:
             # print(f"COUNTINGS FOR {coin}")
             # for deal in sell_deals:
@@ -164,7 +155,7 @@ class MarketFinder:
             else:
                 price = (buy_low + buy_top) / 2
                 sell_price = buy_deals[0]['target'][0]
-                size = min(buy_deals[0]['max_size_coin'], buy_deals[0]['target'][1])
+                size = min(buy_deals[0]['max_sz_coin'], buy_deals[0]['target'][1])
                 profit = (sell_price - price) / price - buy_deals[0]['fees']
                 buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin,
                             'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)]}
@@ -180,7 +171,7 @@ class MarketFinder:
             else:
                 price = (sell_low + sell_top) / 2
                 buy_price = sell_deals[0]['target'][0]
-                size = min(sell_deals[0]['max_size_coin'], sell_deals[0]['target'][1])
+                size = min(sell_deals[0]['max_sz_coin'], sell_deals[0]['target'][1])
                 profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
                 sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin,
                              'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)]}
@@ -202,7 +193,7 @@ class MarketFinder:
         if active_deal:
             if top_deal:
                 if top_deal['side'] == active_deal[1]['side']:
-                    if top_deal['range'][0] <= active_deal[1]['price'] < top_deal['range'][1]:
+                    if top_deal['range'][0] <= active_deal[1]['price'] <= top_deal['range'][1]:
                         print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     else:
                         if coin in self.multibot.requests_in_progress:

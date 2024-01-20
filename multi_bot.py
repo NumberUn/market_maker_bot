@@ -310,15 +310,15 @@ class MultiBot:
             return 'updating'
 
     @try_exc_regular
-    def if_tradable(self, buy_ex, sell_ex, buy_mrkt, sell_mrkt, buy_px, sell_px):
+    def if_tradable(self, buy_ex, sell_ex, buy_mrkt, sell_mrkt, price):
         avl_sz_buy_usd = self._get_available_balance(buy_ex, buy_mrkt, 'buy')
         avl_sz_sell_usd = self._get_available_balance(sell_ex, sell_mrkt, 'sell')
         if avl_sz_buy_usd == 'updating' or avl_sz_sell_usd == 'updating':
             return False
         max_deal_size_usd = min(avl_sz_buy_usd, avl_sz_sell_usd, self.max_order_size_usd)
-        if not self.check_min_size(buy_ex, buy_mrkt, max_deal_size_usd, buy_px):
+        if not self.check_min_size(buy_ex, buy_mrkt, max_deal_size_usd, price):
             return False
-        if not self.check_min_size(sell_ex, sell_mrkt, max_deal_size_usd, sell_px):
+        if not self.check_min_size(sell_ex, sell_mrkt, max_deal_size_usd, price):
             return False
         return max_deal_size_usd
 
