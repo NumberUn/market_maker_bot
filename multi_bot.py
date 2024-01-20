@@ -244,17 +244,17 @@ class MultiBot:
                         'taker size': taker_deal['size'],
                         'taker fee': self.clients_with_names[taker_deal['exchange_name']].taker_fee,
                         'maker fee': self.clients_with_names[self.mm_exchange].maker_fee})
-        fees = results['taker_fee'] + results['maker_fee']
+        fees = results['taker fee'] + results['maker fee']
         if maker_deal['side'] == 'buy':
-            rel_profit = (results['taker_price'] - results['maker_price']) / results['maker_price'] - fees
+            rel_profit = (results['taker price'] - results['maker price']) / results['maker price'] - fees
         else:
-            rel_profit = (results['maker_price'] - results['taker_price']) / results['taker_price'] - fees
+            rel_profit = (results['maker price'] - results['taker price']) / results['taker price'] - fees
         results.update({'relative profit': rel_profit,
-                        'absolute profit coin': rel_profit * results['taker_size'],
-                        'absolute profit usd': rel_profit * results['taker_size'] * results['taker_price'],
-                        'disbalance coin': results['taker_size'] - results['maker_size'],
-                        'disbalance usd': (results['taker_size'] - results['maker_size']) * results['taker_price'],
-                        'total fee usd': fees * results['taker_size']})
+                        'absolute profit coin': rel_profit * results['taker size'],
+                        'absolute profit usd': rel_profit * results['taker size'] * results['taker price'],
+                        'disbalance coin': results['taker size'] - results['maker size'],
+                        'disbalance usd': (results['taker size'] - results['maker size']) * results['taker price'],
+                        'total fee usd': fees * results['taker size']})
         return results
 
 
