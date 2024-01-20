@@ -12,6 +12,7 @@ from core.database import DB
 from core.rabbit import Rabbit
 from core.telegram import Telegram, TG_Groups
 from core.wrappers import try_exc_regular, try_exc_async
+from random import randint
 
 config = configparser.ConfigParser()
 config.read(sys.argv[1], "utf-8")
@@ -152,7 +153,7 @@ class MultiBot:
     async def new_maker_order(self, deal, coin):
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        client_id = 'maker_' + coin + '_' + str(uuid.uuid4())
+        client_id = 'maker_' + coin + '_' + randint(1000, 10000000)
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
         deal.update({'market': market,
                      'client_id': client_id,
@@ -201,7 +202,7 @@ class MultiBot:
                     best_client = client
                     best_ob = ob
         if best_price:
-            client_id = 'taker_' + deal['coin'] + '_' + str(uuid.uuid4())
+            client_id = 'taker_' + deal['coin'] + '_' + randint(1000, 10000000)
             price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
             best_client.async_tasks.append(['create_order', {'price': price,
                                                              'size': size,
@@ -314,9 +315,9 @@ class MultiBot:
         if avl_sz_buy_usd == 'updating' or avl_sz_sell_usd == 'updating':
             return False
         max_deal_size_usd = min(avl_sz_buy_usd, avl_sz_sell_usd, self.max_order_size_usd)
-        if not self.check_min_size(buy_ex, buy_mrkt, avl_sz_buy_usd, buy_px):
+        if not self.check_min_size(buy_ex, buy_mrkt, max_deal_size_usd, buy_px):
             return False
-        if not self.check_min_size(sell_ex, sell_mrkt, avl_sz_sell_usd, sell_px):
+        if not self.check_min_size(sell_ex, sell_mrkt, max_deal_size_usd, sell_px):
             return False
         return max_deal_size_usd
 

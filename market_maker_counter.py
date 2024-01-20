@@ -155,9 +155,6 @@ class MarketFinder:
             else:
                 price = (buy_low + buy_top) / 2
                 sell_price = buy_deals[0]['target'][0]
-                print(f'{coin} TOP DEAL')
-                print(f"{buy_deals[0]['max_size_coin']=}")
-                print(f"{buy_deals[0]['target']=}")
                 size = min(buy_deals[0]['max_size_coin'], buy_deals[0]['target'][1])
                 profit = (sell_price - price) / price - buy_deals[0]['fees']
                 buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin,
@@ -174,9 +171,6 @@ class MarketFinder:
             else:
                 price = (sell_low + sell_top) / 2
                 buy_price = sell_deals[0]['target'][0]
-                print(f'{coin} TOP DEAL')
-                print(f"{sell_deals[0]['max_size_coin']=}")
-                print(f"{sell_deals[0]['target']=}")
                 size = min(sell_deals[0]['max_size_coin'], sell_deals[0]['target'][1])
                 profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
                 sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin,
