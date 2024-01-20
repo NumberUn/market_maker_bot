@@ -121,7 +121,6 @@ class MultiBot:
 
     @try_exc_async
     async def amend_maker_order(self, deal, coin, order_id):
-        self.requests_in_progress.append(coin)
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = self.open_orders[coin][1]['client_id']
@@ -151,7 +150,6 @@ class MultiBot:
 
     @try_exc_async
     async def new_maker_order(self, deal, coin):
-        self.requests_in_progress.append(coin)
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = 'maker_' + coin + '_' + str(uuid.uuid4())
