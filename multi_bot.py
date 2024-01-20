@@ -223,7 +223,7 @@ class MultiBot:
     def create_and_send_deal_report_message(self, results: dict):
         message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}'
         for key, value in results.items():
-            message += key.upper() + ': ' + value + '\n'
+            message += key.upper() + ': ' + str(value) + '\n'
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
