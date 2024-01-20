@@ -137,6 +137,7 @@ class MultiBot:
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
+                self.requests_in_progress.remove(coin)
                 return
             await asyncio.sleep(0.1)
         self.requests_in_progress.remove(coin)
@@ -165,6 +166,7 @@ class MultiBot:
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
+                self.requests_in_progress.remove(coin)
                 return
             await asyncio.sleep(0.1)
         self.requests_in_progress.remove(coin)
@@ -221,7 +223,7 @@ class MultiBot:
 
     @try_exc_regular
     def create_and_send_deal_report_message(self, results: dict):
-        message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}'
+        message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}\n'
         for key, value in results.items():
             message += key.upper() + ': ' + str(value) + '\n'
         self.telegram.send_message(message, TG_Groups.MainGroup)
@@ -230,11 +232,11 @@ class MultiBot:
     def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict) -> dict:
         results = dict()
         results.update({'coin': maker_deal['coin'],
-                        'taker order ping': taker_deal['create_order_time'],
-                        'taker ws ob ping': taker_ob['ts_ms'] - taker_ob['timestamp'],
-                        'taker ob age': taker_ob['timestamp'] - taker_ob['ts_ms'],
-                        'maker-taker ping': maker_deal['timestamp'] - taker_deal['timestamp'],
-                        'ping got fill -> send': taker_deal['time_order_sent'] - maker_deal['ts_ms'],
+                        'taker order ping': round(taker_deal['create_order_time'], 5),
+                        'taker ws ob ping': round(taker_ob['timestamp'] - taker_ob['ts_ms'], 5),
+                        'taker ob age': round(maker_deal['timestamp'] - taker_ob['timestamp'], 5),
+                        'maker-taker ping': round(taker_deal['timestamp'] - maker_deal['timestamp'], 5),
+                        'ping got fill -> send': round(taker_deal['time_order_sent'] - maker_deal['ts_ms'], 5),
                         'taker exchange': taker_deal['exchange_name'],
                         'maker exchange': self.mm_exchange,
                         'maker side': maker_deal['side'],
@@ -242,19 +244,19 @@ class MultiBot:
                         'maker size': maker_deal['size'],
                         'taker price': taker_deal['price'],
                         'taker size': taker_deal['size'],
-                        'taker fee': self.clients_with_names[taker_deal['exchange_name']].taker_fee,
-                        'maker fee': self.clients_with_names[self.mm_exchange].maker_fee})
+                        'taker fee': round(self.clients_with_names[taker_deal['exchange_name']].taker_fee, 5),
+                        'maker fee': round(self.clients_with_names[self.mm_exchange].maker_fee, 5)})
         fees = results['taker fee'] + results['maker fee']
         if maker_deal['side'] == 'buy':
             rel_profit = (results['taker price'] - results['maker price']) / results['maker price'] - fees
         else:
             rel_profit = (results['maker price'] - results['taker price']) / results['taker price'] - fees
-        results.update({'relative profit': rel_profit,
-                        'absolute profit coin': rel_profit * results['taker size'],
-                        'absolute profit usd': rel_profit * results['taker size'] * results['taker price'],
-                        'disbalance coin': results['taker size'] - results['maker size'],
-                        'disbalance usd': (results['taker size'] - results['maker size']) * results['taker price'],
-                        'total fee usd': fees * results['taker size']})
+        results.update({'relative profit': round(rel_profit, 4),
+                        'absolute profit coin': round(rel_profit * results['taker size'], 6),
+                        'absolute profit usd': round(rel_profit * results['taker size'] * results['taker price'], 2),
+                        'disbalance coin': round(results['taker size'] - results['maker size'], 6),
+                        'disbalance usd': round((results['taker size'] - results['maker size']) * results['taker price'], 2),
+                        'total fee usd': round(fees * results['taker size'], 4)})
         return results
 
 

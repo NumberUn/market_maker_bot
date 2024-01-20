@@ -159,7 +159,7 @@ class MarketFinder:
                 print(f"buy_low > buy_top!!!!!! CHECK BUY DEALS\n\n\n")
                 if active_deal:
                     self.delete_order(coin, active_deal[0])
-                    return
+                    # return
             else:
                 price = (buy_low + buy_top) / 2
                 sell_price = buy_deals[0]['target'][0]
@@ -175,7 +175,7 @@ class MarketFinder:
                 print(f"sell_low < sell_top!!!!!! CHECK SELL DEALS\n\n\n")
                 if active_deal:
                     self.delete_order(coin, active_deal[0])
-                    return
+                    # return
             else:
                 price = (sell_low + sell_top) / 2
                 buy_price = sell_deals[0]['target'][0]
