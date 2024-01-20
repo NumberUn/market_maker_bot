@@ -167,7 +167,7 @@ class MarketFinder:
                 size = min(buy_deals[0]['max_size_coin'], buy_deals[0]['target'][1])
                 profit = (sell_price - price) / price - buy_deals[0]['fees']
                 buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin,
-                            'profit': profit, 'range': [buy_low, buy_top]}
+                            'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)]}
         if sell_deals:
             sell_low = max([x['range'][0] for x in sell_deals])
             sell_top = min([x['range'][1] for x in sell_deals])
@@ -183,20 +183,18 @@ class MarketFinder:
                 size = min(sell_deals[0]['max_size_coin'], sell_deals[0]['target'][1])
                 profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
                 sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin,
-                             'profit': profit, 'range': [sell_low, sell_top]}
+                             'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)]}
         if sell_deal and buy_deal:
             top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
         elif sell_deal and not buy_deal:
             top_deal = sell_deal
         elif buy_deal and not sell_deal:
             top_deal = buy_deal
-        if top_deal:
-            print(f"TOP DEAL: {top_deal}")
-            print(f"ACTIVE DEAL: {active_deal}")
-            print()
+        # if top_deal:
+        #     print(f"TOP DEAL: {top_deal}")
+        #     print(f"ACTIVE DEAL: {active_deal}")
+        #     print()
         return top_deal, buy_deal, sell_deal
-
-
 
     @try_exc_regular
     def process_parse_results(self, sell_deals, buy_deals, coin, active_deal):

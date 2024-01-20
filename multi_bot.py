@@ -216,7 +216,6 @@ class MultiBot:
                     best_client.responses.pop(client_id)
                     results = self.sort_deal_response_data(deal, resp, best_ob)
                     self.create_and_send_deal_report_message(results)
-                    # TODO DEAL REPORT
                     return
                 await asyncio.sleep(0.1)
             self.telegram.send_message(f"ALERT! TAKER DEAL DIDN'T PLACED\n{deal}", TG_Groups.MainGroup)
@@ -251,12 +250,12 @@ class MultiBot:
             rel_profit = (results['taker price'] - results['maker price']) / results['maker price'] - fees
         else:
             rel_profit = (results['maker price'] - results['taker price']) / results['taker price'] - fees
-        results.update({'relative profit': round(rel_profit, 4),
-                        'absolute profit coin': round(rel_profit * results['taker size'], 6),
-                        'absolute profit usd': round(rel_profit * results['taker size'] * results['taker price'], 2),
-                        'disbalance coin': round(results['taker size'] - results['maker size'], 6),
-                        'disbalance usd': round((results['taker size'] - results['maker size']) * results['taker price'], 2),
-                        'total fee usd': round(fees * results['taker size'], 4)})
+        results.update({'relative profit': round(rel_profit, 6),
+                        'absolute profit coin': round(rel_profit * results['taker size'], 8),
+                        'absolute profit usd': round(rel_profit * results['taker size'] * results['taker price'], 6),
+                        'disbalance coin': round(results['taker size'] - results['maker size'], 8),
+                        'disbalance usd': round((results['taker size'] - results['maker size']) * results['taker price'], 6),
+                        'total fee usd': round(fees * results['taker size'], 6)})
         return results
 
 
