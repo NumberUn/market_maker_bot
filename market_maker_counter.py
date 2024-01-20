@@ -190,9 +190,10 @@ class MarketFinder:
             top_deal = sell_deal
         elif buy_deal and not sell_deal:
             top_deal = buy_deal
-        print(f"TOP DEAL: {top_deal}")
-        print(f"ACTIVE DEAL: {active_deal}")
-        print()
+        if top_deal:
+            print(f"TOP DEAL: {top_deal}")
+            print(f"ACTIVE DEAL: {active_deal}")
+            print()
         return top_deal, buy_deal, sell_deal
 
 
@@ -225,7 +226,7 @@ class MarketFinder:
                 print(f"DELETE\nORDER: {active_deal[0]}")
         else:
             if top_deal:
-                if coin not in self.multibot.requests_in_progress:
+                if coin in self.multibot.requests_in_progress:
                     print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                     return
                 self.multibot.requests_in_progress.append(coin)
