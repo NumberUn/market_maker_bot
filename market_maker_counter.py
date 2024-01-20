@@ -79,7 +79,11 @@ class MarketFinder:
                         best_price = ob_buy['bids'][0][0] + tick
                     else:
                         best_price = ob_buy['bids'][1][0] + tick
-                    worst_price = ob_buy['asks'][0][0] - tick
+                    if best_price == ob_buy['asks'][0][0]:
+                        best_price = ob_buy['bids'][0][0]
+                        worst_price = best_price
+                    else:
+                        worst_price = ob_buy['asks'][0][0] - tick
                     if max_size_usd := self.multibot.if_tradable(ex_buy,
                                                                  ex_sell,
                                                                  markets['buy'],
@@ -108,7 +112,11 @@ class MarketFinder:
                         best_price = ob_sell['asks'][0][0] - tick
                     else:
                         best_price = ob_sell['asks'][1][0] - tick
-                    worst_price = ob_sell['bids'][0][0] + tick
+                    if best_price == ob_sell['bids'][0][0]:
+                        best_price = ob_sell['asks'][0][0]
+                        worst_price = best_price
+                    else:
+                        worst_price = ob_sell['bids'][0][0] + tick
                     if max_size_usd := self.multibot.if_tradable(ex_buy,
                                                                  ex_sell,
                                                                  markets['buy'],
