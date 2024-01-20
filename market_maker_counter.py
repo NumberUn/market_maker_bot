@@ -189,8 +189,9 @@ class MarketFinder:
             top_deal = sell_deal
         else:
             top_deal = buy_deal
-        # print(f"TOP DEAL: {top_deal}")
-        # print()
+        print(f"TOP DEAL: {top_deal}")
+        print(f"ACTIVE DEAL: {active_deal}")
+        print()
         # return
         if active_deal:
             if active_deal[1]['side'] == 'buy':

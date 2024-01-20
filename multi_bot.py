@@ -233,7 +233,7 @@ class MultiBot:
         results = dict()
         results.update({'coin': maker_deal['coin'],
                         'taker order ping': round(taker_deal['create_order_time'], 5),
-                        'taker ws ob ping': round(taker_ob['timestamp'] - taker_ob['ts_ms'], 5),
+                        'taker ws ob ping': round(taker_ob['ts_ms'] - taker_ob['timestamp'], 5),
                         'taker ob age': round(maker_deal['timestamp'] - taker_ob['timestamp'], 5),
                         'maker-taker ping': round(taker_deal['timestamp'] - maker_deal['timestamp'], 5),
                         'ping got fill -> send': round(taker_deal['time_order_sent'] - maker_deal['ts_ms'], 5),
