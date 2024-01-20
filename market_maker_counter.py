@@ -132,11 +132,11 @@ class MarketFinder:
                                                'range': [best_price, zero_profit_sell_px]})
 
         if sell_deals or buy_deals:
-            print(f"COUNTINGS FOR {coin}")
-            for deal in sell_deals:
-                print(f"BUY DEAL: {deal}")
-            for deal in buy_deals:
-                print(f"SELL DEAL: {deal}")
+            # print(f"COUNTINGS FOR {coin}")
+            # for deal in sell_deals:
+            #     print(f"BUY DEAL: {deal}")
+            # for deal in buy_deals:
+            #     print(f"SELL DEAL: {deal}")
             self.choose_maker_order(sell_deals, buy_deals, coin)
 
     def choose_maker_order(self, sell_deals, buy_deals, coin):
@@ -177,20 +177,21 @@ class MarketFinder:
             top_deal = sell_deal
         else:
             top_deal = buy_deal
-        print(f"TOP DEAL: {top_deal}")
-        print()
-        return
+        # print(f"TOP DEAL: {top_deal}")
+        # print()
+        # return
         if active_deal:
             if active_deal[1]['side'] == 'buy':
                 if not buy_deal:
                     self.delete_order(coin, active_deal[0])
                     print(f"DELETE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}")
-                elif buy_deal['range'][0] < active_deal[1]['price'] < buy_deal['range'][1]:
+                elif buy_deal['range'][0] <= active_deal[1]['price'] < buy_deal['range'][1]:
                     print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     return
                 elif top_deal['side'] == 'buy':
-                    self.amend_order(top_deal, coin, active_deal[0])
-                    print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+                    if coin not in self.multibot.amend_requests:
+                        self.amend_order(top_deal, coin, active_deal[0])
+                        print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
                 elif top_deal['side'] == 'sell':
                     self.delete_order(coin, active_deal[0])
                     self.new_order(top_deal, coin)
@@ -199,12 +200,13 @@ class MarketFinder:
                 if not sell_deal:
                     self.delete_order(coin, active_deal[0])
                     print(f"DELETE\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
-                elif sell_deal['range'][0] < active_deal[1]['price'] < sell_deal['range'][1]:
+                elif sell_deal['range'][0] <= active_deal[1]['price'] < sell_deal['range'][1]:
                     print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     return
                 elif top_deal['side'] == 'sell':
-                    self.amend_order(top_deal, coin, active_deal[0])
-                    print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
+                    if coin not in self.multibot.amend_requests:
+                        self.amend_order(top_deal, coin, active_deal[0])
+                        print(f"AMEND\nORDER {coin} {active_deal[1]['side']} EXPIRED. PRICE: {active_deal[1]['price']}\n")
                 elif top_deal['side'] == 'buy':
                     self.delete_order(coin, active_deal[0])
                     self.new_order(top_deal, coin)

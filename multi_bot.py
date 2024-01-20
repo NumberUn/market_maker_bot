@@ -30,7 +30,7 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange']
+                 'mm_exchange', 'amend_requests']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -72,6 +72,7 @@ class MultiBot:
         self.rabbit = Rabbit(self._loop)
         self.open_orders = {'COIN': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
+        self.amend_requests = []
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -120,6 +121,7 @@ class MultiBot:
 
     @try_exc_async
     async def amend_maker_order(self, deal, coin, order_id):
+        self.amend_requests.append(coin)
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = self.open_orders[coin][1]['client_id']
@@ -137,6 +139,7 @@ class MultiBot:
                 mm_client.responses.pop(client_id)
                 return
             await asyncio.sleep(0.1)
+        self.amend_requests.remove(coin)
 
     @try_exc_async
     async def delete_maker_order(self, coin, order_id):
