@@ -61,6 +61,8 @@ class MarketFinder:
     async def count_one_coin(self, coin, exchange):
         buy_deals = []
         sell_deals = []
+        active_deal = self.get_active_deal(coin)
+        active_deal_price = active_deal[1]['price'] if active_deal else 0
         for ex_buy, client_buy in self.clients_with_names.items():
             for ex_sell, client_sell in self.clients_with_names.items():
                 markets = self.check_exchanges(exchange, ex_buy, ex_sell, client_buy, client_sell, coin)
@@ -73,7 +75,10 @@ class MarketFinder:
                 # BUY SIDE COUNTINGS
                 if ex_buy == self.mm_exchange:
                     tick = client_buy.instruments[markets['buy']]['tick_size']
-                    best_price = ob_buy['bids'][0][0] + tick
+                    if active_deal_price != ob_buy['bids'][0][0]:
+                        best_price = ob_buy['bids'][0][0] + tick
+                    else:
+                        best_price = ob_buy['bids'][1][0] + tick
                     worst_price = ob_buy['asks'][0][0] - tick
                     if max_size_usd := self.multibot.if_tradable(ex_buy,
                                                                  ex_sell,
@@ -99,7 +104,10 @@ class MarketFinder:
                 # SELL SIDE COUNTINGS
                 if ex_sell == self.mm_exchange:
                     tick = client_sell.instruments[markets['sell']]['tick_size']
-                    best_price = ob_sell['asks'][0][0] - tick
+                    if active_deal_price != ob_sell['asks'][0][0]:
+                        best_price = ob_sell['asks'][0][0] - tick
+                    else:
+                        best_price = ob_sell['asks'][1][0] - tick
                     worst_price = ob_sell['bids'][0][0] + tick
                     if max_size_usd := self.multibot.if_tradable(ex_buy,
                                                                  ex_sell,

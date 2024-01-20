@@ -171,6 +171,7 @@ class MultiBot:
         best_market = None
         best_price = None
         best_client = None
+        best_ob = None
         for client in self.clients:
             if self.mm_exchange == client.EXCHANGE_NAME:
                 continue
@@ -184,15 +185,18 @@ class MultiBot:
                             best_price = price
                             best_market = market
                             best_client = client
+                            best_ob = ob
                     else:
                         if best_price < price:
                             best_price = price
                             best_market = market
                             best_client = client
+                            best_ob = ob
                 else:
                     best_price = price
                     best_market = market
                     best_client = client
+                    best_ob = ob
         if best_price:
             client_id = 'taker_' + deal['coin'] + '_' + str(uuid.uuid4())
             price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
@@ -204,7 +208,7 @@ class MultiBot:
             for i in range(0, 50):
                 if resp := best_client.responses.get(client_id):
                     best_client.responses.pop(client_id)
-                    results = self.sort_deal_response_data(deal, resp)
+                    results = self.sort_deal_response_data(deal, resp, best_ob)
                     self.create_and_send_deal_report_message(results)
                     # TODO DEAL REPORT
                     return
@@ -219,11 +223,14 @@ class MultiBot:
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
-    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict) -> dict:
+    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict) -> dict:
         results = dict()
         results.update({'coin': maker_deal['coin'],
-                        'taker ping': taker_deal['create_order_time'],
+                        'taker order ping': taker_deal['create_order_time'],
+                        'taker ws ob ping': taker_ob['ts_ms'] - taker_ob['timestamp'],
+                        'taker ob age': taker_ob['timestamp'] - taker_ob['ts_ms'],
                         'maker-taker ping': maker_deal['timestamp'] - taker_deal['timestamp'],
+                        'ping got fill -> send': taker_deal['time_order_sent'] - maker_deal['ts_ms'],
                         'taker exchange': taker_deal['exchange_name'],
                         'maker exchange': self.mm_exchange,
                         'maker side': maker_deal['side'],
