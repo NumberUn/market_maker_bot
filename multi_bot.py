@@ -73,7 +73,7 @@ class MultiBot:
         self.base_launch_config = self.get_default_launch_config()
         self._loop = asyncio.new_event_loop()
         self.rabbit = Rabbit(self._loop)
-        self.open_orders = {'COIN': ['id', "ORDER_DATA"]}
+        self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
         self.requests_in_progress = []
         self.deleted_orders = []
@@ -125,16 +125,16 @@ class MultiBot:
 
     @try_exc_async
     async def amend_maker_order(self, deal, coin, order_id):
-        old_order = self.open_orders.get(coin)
+        old_order = self.open_orders.get(coin + '-' + self.mm_exchange)
         if not old_order:
-            self.requests_in_progress.remove(coin)
+            self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
             return
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = old_order[1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
         if price == old_order[1]['price']:
-            self.requests_in_progress.remove(coin)
+            self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
             return
         deal.update({'market': market,
                      'order_id': order_id,
@@ -145,12 +145,12 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 50):
             if resp := mm_client.responses.get(client_id):
-                self.open_orders.update({coin: [resp['exchange_order_id'], deal]})
+                self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.remove(coin)
+                self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
                 return
             await asyncio.sleep(0.1)
-        self.requests_in_progress.remove(coin)
+        self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
 
     @try_exc_async
     async def delete_maker_order(self, coin, order_id):
@@ -159,7 +159,7 @@ class MultiBot:
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
         mm_client.async_tasks.append(task)
-        self.open_orders.pop(coin, None)
+        self.open_orders.pop(coin + '-' + self.mm_exchange, None)
 
     @try_exc_regular
     def precise_size(self, coin, size):
@@ -171,7 +171,7 @@ class MultiBot:
     async def new_maker_order(self, deal, coin):
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        client_id = 'maker-' + coin + '-' + str(randint(1000, 10000000))
+        client_id = f'maker-{mm_client.EXCHANGE_NAME}-' + coin + '-' + str(randint(1000, 10000000))
         size = self.precise_size(coin, deal['size'])
         price, size = mm_client.fit_sizes(deal['price'], size, market)
         deal.update({'market': market,
@@ -182,7 +182,7 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 50):
             if resp := mm_client.responses.get(client_id):
-                self.open_orders.update({coin: [resp['exchange_order_id'], deal]})
+                self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin)
                 return
@@ -222,7 +222,7 @@ class MultiBot:
                     best_client = client
                     best_ob = ob
         if best_price:
-            client_id = 'taker-' + deal['coin'] + '-' + str(randint(1000, 10000000))
+            client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + str(randint(1000, 10000000))
             price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
             best_client.async_tasks.append(['create_order', {'price': price,
                                                              'size': size,
