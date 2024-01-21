@@ -50,8 +50,8 @@ class MultiBot:
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
         self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
         self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
-        self.profit_open = self.setts['PROFIT_OPEN']
-        self.profit_close = self.setts['PROFIT_CLOSE']
+        self.profit_open = float(self.setts['PROFIT_OPEN'])
+        self.profit_close = float(self.setts['PROFIT_CLOSE'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
         self.mm_exchange = self.setts["MM_EXCHANGE"]
         self.clients = []
