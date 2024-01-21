@@ -306,7 +306,7 @@ class MultiBot:
     async def launch(self):
         self.db = DB(self.rabbit)
         await self.db.setup_postgres()
-        self.update_all_av_balances()
+        await self.update_all_av_balances()
         self.update_all_positions_aggregates()
         print('CLIENTS MARKET DATA:')
         for exchange, exchange_data in self.markets_data.items():
