@@ -54,8 +54,8 @@ class Telegram:
         message += f"LEVERAGE: {multibot.setts['LEVERAGE']}\n"
         message += f"DEALS PAUSE: {multibot.setts['DEALS_PAUSE']}\n"
         message += f"ORDER SIZE: {multibot.setts['ORDER_SIZE']}\n"
-        message += f"TARGET PROFIT: {multibot.setts['TARGET_PROFIT']}\n"
-        message += f"CLOSE PROFIT: {multibot.setts['CLOSE_PROFIT']}\n"
+        message += f"PROFIT OPEN: {multibot.setts['PROFIT_OPEN']}\n"
+        message += f"PROFIT CLOSE: {multibot.setts['PROFIT_CLOSE']}\n"
         self.send_message(message, group)
         return message
 
