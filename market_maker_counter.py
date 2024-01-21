@@ -12,6 +12,7 @@ class MarketFinder:
         self.taker_fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
         self.maker_fees = {x: y.maker_fee for x, y in self.clients_with_names.items()}
         self.mm_exchange = self.multibot.mm_exchange
+        self.ob_level = self.multibot.count_ob_level
 
     def get_active_deal(self, coin):
         if order := self.multibot.open_orders.get(coin):
@@ -107,13 +108,13 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
                         max_sz_coin = max_sz_usd / best_px
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
-                        zero_profit_buy_px = ob_sell['bids'][2][0] * (1 - fees)
+                        zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_buy_px >= worst_px:
-                            pot_deal.update({'range': [best_px, worst_px], 'target': ob_sell['bids'][2]})
+                            pot_deal.update({'range': [best_px, worst_px], 'target': ob_sell['bids'][self.ob_level]})
                             buy_deals.append(pot_deal)
                         elif best_px <= zero_profit_buy_px <= worst_px:
-                            pot_deal.update({'range': [best_px, zero_profit_buy_px], 'target': ob_sell['bids'][2]})
+                            pot_deal.update({'range': [best_px, zero_profit_buy_px], 'target': ob_sell['bids'][self.ob_level]})
                             buy_deals.append(pot_deal)
                 # SELL SIDE COUNTINGS
                 elif ex_sell == self.mm_exchange:
@@ -122,13 +123,13 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
                         max_sz_coin = max_sz_usd / best_px
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
-                        zero_profit_sell_px = ob_buy['asks'][2][0] * (1 + fees)
+                        zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_sell_px <= worst_px:
-                            pot_deal.update({'range': [worst_px, best_px], 'target': ob_buy['asks'][2]})
+                            pot_deal.update({'range': [worst_px, best_px], 'target': ob_buy['asks'][self.ob_level]})
                             sell_deals.append(pot_deal)
                         elif best_px >= zero_profit_sell_px >= worst_px:
-                            pot_deal.update({'range': [zero_profit_sell_px, best_px], 'target': ob_buy['asks'][2]})
+                            pot_deal.update({'range': [zero_profit_sell_px, best_px], 'target': ob_buy['asks'][self.ob_level]})
                             sell_deals.append(pot_deal)
         # if sell_deals or buy_deals:
             # print(f"COUNTINGS FOR {coin}")

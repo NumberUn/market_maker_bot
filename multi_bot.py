@@ -31,7 +31,7 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange', 'requests_in_progress', 'deleted_orders']
+                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -48,6 +48,7 @@ class MultiBot:
         self.max_order_size_usd = int(self.setts['ORDER_SIZE'])
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
         self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
+        self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
         self.mm_exchange = self.setts["MM_EXCHANGE"]
         self.clients = []
@@ -127,6 +128,9 @@ class MultiBot:
         market = mm_client.markets[coin]
         client_id = self.open_orders[coin][1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
+        if price == self.open_orders[coin][1]['price']:
+            self.requests_in_progress.remove(coin)
+            return
         deal.update({'market': market,
                      'order_id': order_id,
                      'client_id': client_id,
@@ -150,7 +154,7 @@ class MultiBot:
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
         mm_client.async_tasks.append(task)
-        self.open_orders.pop(coin)
+        self.open_orders.pop(coin, None)
 
     @try_exc_async
     async def new_maker_order(self, deal, coin):
