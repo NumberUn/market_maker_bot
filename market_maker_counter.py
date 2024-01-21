@@ -13,6 +13,8 @@ class MarketFinder:
         self.maker_fees = {x: y.maker_fee for x, y in self.clients_with_names.items()}
         self.mm_exchange = self.multibot.mm_exchange
         self.ob_level = self.multibot.count_ob_level
+        self.profit_open = self.multibot.profit_open
+        self.profit_close = self.multibot.profit_close
 
     def get_active_deal(self, coin):
         if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
@@ -86,6 +88,32 @@ class MarketFinder:
             worst_px = ob_sell['bids'][0][0] + tick
         return best_px, worst_px
 
+    @try_exc_regular
+    def get_deal_direction(self, exchange_buy, exchange_sell, buy_market, sell_market):
+        poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
+        buy_close = False
+        sell_close = False
+        if pos_buy := poses[exchange_buy].get(buy_market):
+            buy_close = True if pos_buy['amount_usd'] < 0 else False
+        if pos_sell := poses[exchange_sell].get(sell_market):
+            sell_close = True if pos_sell['amount_usd'] > 0 else False
+        if buy_close and sell_close:
+            return 'close'
+        elif not buy_close and not sell_close:
+            return 'open'
+        else:
+            return 'half_close'
+
+    @try_exc_regular
+    def get_target_profit(self, deal_direction):
+        if deal_direction == 'open':
+            target_profit = self.profit_open
+        elif deal_direction == 'close':
+            target_profit = self.profit_close
+        else:
+            target_profit = (self.profit_open + self.profit_close) / 2
+        return target_profit
+
     @try_exc_async
     async def count_one_coin(self, coin, exchange):
         buy_deals = []
@@ -103,6 +131,8 @@ class MarketFinder:
                     # print(f"ORDERBOOKS FAILURE: {coin}")
                     continue
                 # BUY SIDE COUNTINGS
+                direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'])
+                target_profit = self.get_target_profit(direction)
                 if ex_buy == self.mm_exchange:
                     top_bid = ob_buy['bids'][0][0]
                     # TEST PROFIT RANGES CODE BUY
@@ -113,7 +143,7 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         max_sz_coin = max_sz_usd / best_px
-                        zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees)
+                        zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees - target_profit)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_buy_px >= worst_px:
                             pot_deal.update({'range': [best_px, worst_px], 'target': ob_sell['bids'][self.ob_level]})
@@ -132,7 +162,7 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         max_sz_coin = max_sz_usd / best_px
-                        zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees)
+                        zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees + target_profit)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_sell_px <= worst_px:
                             pot_deal.update({'range': [worst_px, best_px], 'target': ob_buy['asks'][self.ob_level]})

@@ -24,7 +24,7 @@ init_time = time.time()
 
 
 class MultiBot:
-    __slots__ = ['deal_pause', 'cycle_parser_delay', 'max_order_size_usd', 'chosen_deal', 'profit_taker', 'shifts',
+    __slots__ = ['deal_pause', 'cycle_parser_delay', 'max_order_size_usd', 'chosen_deal', 'profit_open', 'shifts',
                  'rabbit', 'telegram', 'start_time', 'trade_exceptions', 'close_only_exchanges',
                  'available_balances', 'positions', 'clients', 'exchanges', 'env', 'db', 'tasks',
                  '_loop', 'loop_2', 'loop_3', 'last_orderbooks', 'time_start', 'time_parser', 'bot_launch_id',
@@ -50,6 +50,8 @@ class MultiBot:
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
         self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
         self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
+        self.profit_open = self.setts['PROFIT_OPEN']
+        self.profit_close = self.setts['PROFIT_CLOSE']
         self.exchanges = self.setts['EXCHANGES'].split(',')
         self.mm_exchange = self.setts["MM_EXCHANGE"]
         self.clients = []
