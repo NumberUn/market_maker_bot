@@ -184,10 +184,10 @@ class MultiBot:
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.remove(coin)
+                self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
                 return
             await asyncio.sleep(0.1)
-        self.requests_in_progress.remove(coin)
+        self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
