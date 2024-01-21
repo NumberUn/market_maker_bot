@@ -239,8 +239,30 @@ class MultiBot:
             self.telegram.send_message(f"ALERT! TAKER DEAL DIDN'T PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
+    def get_deal_direction_maker(self, positions, results):
+        exchange_buy = results['maker exchange'] if results['maker side'] == 'buy' else results['taker exchange']
+        exchange_sell = results['maker exchange'] if results['maker side'] == 'sell' else results['taker exchange']
+        buy_market = self.clients_with_names[exchange_buy].markets[results['coin']]
+        sell_market = self.clients_with_names[exchange_sell].markets[results['coin']]
+        buy_close = False
+        sell_close = False
+        if pos_buy := positions[exchange_buy].get(buy_market):
+            buy_close = True if pos_buy['amount_usd'] < 0 else False
+        if pos_sell := positions[exchange_sell].get(sell_market):
+            sell_close = True if pos_sell['amount_usd'] > 0 else False
+        if buy_close and sell_close:
+            return 'close'
+        elif not buy_close and not sell_close:
+            return 'open'
+        else:
+            return 'half_close'
+
+    @try_exc_regular
     def create_and_send_deal_report_message(self, results: dict):
+        poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
+        direction = self.get_deal_direction_maker(poses, results)
         message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}\n'
+        message += f"DIRECTION: {str(direction).upper()}\n"
         for key, value in results.items():
             message += key.upper() + ': ' + str(value) + '\n'
         self.telegram.send_message(message, TG_Groups.MainGroup)
