@@ -370,8 +370,8 @@ class MultiBot:
         price, amount = client.fit_sizes(price, size, market)
         return price, amount
 
-    @try_exc_regular
-    def update_all_av_balances(self):
+    @try_exc_async
+    async def update_all_av_balances(self):
         for exchange, client in self.clients_with_names.items():
             self.available_balances.update({exchange: client.get_available_balance()})
             print(f"UPDATED {exchange} avl balances: {client.get_available_balance()}")
