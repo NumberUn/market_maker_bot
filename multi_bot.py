@@ -4,6 +4,7 @@ import sys
 import time
 import uuid
 from datetime import datetime
+import math
 
 from market_maker_counter import MarketFinder
 from clients.core.all_clients import ALL_CLIENTS
@@ -156,12 +157,19 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         self.open_orders.pop(coin, None)
 
+    @try_exc_regular
+    def precise_size(self, coin, size):
+        step_size = max([x.instruments[x.markets[coin]]['step_size'] for x in self.clients if x.markets.get(coin)])
+        perfect_size = math.floor(size / step_size) * step_size
+        return perfect_size
+
     @try_exc_async
     async def new_maker_order(self, deal, coin):
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = 'maker-' + coin + '-' + str(randint(1000, 10000000))
-        price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
+        size = self.precise_size(coin, deal['size'])
+        price, size = mm_client.fit_sizes(deal['price'], size, market)
         deal.update({'market': market,
                      'client_id': client_id,
                      'price': price,
@@ -252,10 +260,13 @@ class MultiBot:
                         'taker fee': round(self.clients_with_names[taker_deal['exchange_name']].taker_fee, 5),
                         'maker fee': round(self.clients_with_names[self.mm_exchange].maker_fee, 5)})
         fees = results['taker fee'] + results['maker fee']
-        if maker_deal['side'] == 'buy':
-            rel_profit = (results['taker price'] - results['maker price']) / results['maker price'] - fees
+        if results['taker price']:
+            if maker_deal['side'] == 'buy':
+                rel_profit = (results['taker price'] - results['maker price']) / results['maker price'] - fees
+            else:
+                rel_profit = (results['maker price'] - results['taker price']) / results['taker price'] - fees
         else:
-            rel_profit = (results['maker price'] - results['taker price']) / results['taker price'] - fees
+            rel_profit = 0
         results.update({'relative profit': round(rel_profit, 6),
                         'absolute profit coin': round(rel_profit * results['taker size'], 8),
                         'absolute profit usd': round(rel_profit * results['taker size'] * results['taker price'], 6),

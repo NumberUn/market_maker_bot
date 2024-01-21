@@ -225,5 +225,6 @@ class MarketFinder:
                 self.new_order(top_deal, coin)
                 print(f"CREATE NEW ORDER {coin} {top_deal}\n")
 
+
 if __name__ == '__main__':
     pass
