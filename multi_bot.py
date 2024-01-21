@@ -140,7 +140,8 @@ class MultiBot:
                      'order_id': order_id,
                      'client_id': client_id,
                      'price': price,
-                     'size': size})
+                     'size': size,
+                     'side': old_order[1]['side']})
         task = ['amend_order', deal]
         mm_client.async_tasks.append(task)
         for i in range(0, 50):
