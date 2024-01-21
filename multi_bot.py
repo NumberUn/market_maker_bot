@@ -275,8 +275,6 @@ class MultiBot:
                         'total fee usd': round(fees * results['taker size'], 6)})
         return results
 
-
-
     @try_exc_async
     async def launch(self):
         self.db = DB(self.rabbit)

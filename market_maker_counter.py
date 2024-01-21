@@ -100,14 +100,19 @@ class MarketFinder:
                 ob_buy = client_buy.get_orderbook(mrkt['buy'])
                 ob_sell = client_sell.get_orderbook(mrkt['sell'])
                 if not self.check_orderbooks(ob_buy, ob_sell):
+                    # print(f"ORDERBOOKS FAILURE: {coin}")
                     continue
                 # BUY SIDE COUNTINGS
                 if ex_buy == self.mm_exchange:
                     top_bid = ob_buy['bids'][0][0]
+                    # TEST PROFIT RANGES CODE BUY
+                    # top_profit = (ob_sell['bids'][self.ob_level][0] - best_px) / best_px - fees
+                    # low_profit = (ob_sell['bids'][self.ob_level][0] - worst_px) / worst_px - fees
+                    # print(f"{coin} BUY PROFIT RANGE: {round(top_profit, 6)} - {round(low_profit, 6)}")
                     if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_bid):
                         best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
-                        max_sz_coin = max_sz_usd / best_px
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
+                        max_sz_coin = max_sz_usd / best_px
                         zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_buy_px >= worst_px:
@@ -119,10 +124,14 @@ class MarketFinder:
                 # SELL SIDE COUNTINGS
                 elif ex_sell == self.mm_exchange:
                     top_ask = ob_sell['asks'][0][0]
+                    # TEST PROFIT RANGES CODE SELL
+                    # top_profit = (best_px - ob_buy['asks'][self.ob_level][0]) / ob_buy['asks'][self.ob_level][0] - fees
+                    # low_profit = (worst_px - ob_buy['asks'][self.ob_level][0]) / ob_buy['asks'][self.ob_level][0] - fees
+                    # print(f"{coin} SELL PROFIT RANGE: {round(top_profit, 6)} - {round(low_profit, 6)}")
                     if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_ask):
                         best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
-                        max_sz_coin = max_sz_usd / best_px
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
+                        max_sz_coin = max_sz_usd / best_px
                         zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_sell_px <= worst_px:
@@ -132,11 +141,12 @@ class MarketFinder:
                             pot_deal.update({'range': [zero_profit_sell_px, best_px], 'target': ob_buy['asks'][self.ob_level]})
                             sell_deals.append(pot_deal)
         # if sell_deals or buy_deals:
-            # print(f"COUNTINGS FOR {coin}")
-            # for deal in sell_deals:
-            #     print(f"BUY DEAL: {deal}")
-            # for deal in buy_deals:
-            #     print(f"SELL DEAL: {deal}")
+        #     print(f"COUNTINGS FOR {coin}")
+        #     for deal in sell_deals:
+        #         print(f"BUY DEAL: {deal}")
+        #     for deal in buy_deals:
+        #         print(f"SELL DEAL: {deal}")
+        #     print('\n')
         self.process_parse_results(sell_deals, buy_deals, coin, active_deal)
 
     @try_exc_regular
