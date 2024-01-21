@@ -105,13 +105,19 @@ class MarketFinder:
             return 'half_close'
 
     @try_exc_regular
-    def get_target_profit(self, deal_direction):
+    def count_direction_profit(self, deal_direction):
         if deal_direction == 'open':
             target_profit = self.profit_open
         elif deal_direction == 'close':
             target_profit = self.profit_close
         else:
             target_profit = (self.profit_open + self.profit_close) / 2
+        return target_profit
+
+    @try_exc_regular
+    def get_target_profit(self, ex_buy, ex_sell, mrkt):
+        direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'])
+        target_profit = self.count_direction_profit(direction)
         return target_profit
 
     @try_exc_async
@@ -131,8 +137,6 @@ class MarketFinder:
                     # print(f"ORDERBOOKS FAILURE: {coin}")
                     continue
                 # BUY SIDE COUNTINGS
-                direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'])
-                target_profit = self.get_target_profit(direction)
                 if ex_buy == self.mm_exchange:
                     top_bid = ob_buy['bids'][0][0]
                     # TEST PROFIT RANGES CODE BUY
@@ -143,6 +147,7 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         max_sz_coin = max_sz_usd / best_px
+                        target_profit = self.get_target_profit(ex_buy, ex_sell, mrkt)
                         zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees - target_profit)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_buy_px >= worst_px:
@@ -162,6 +167,7 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         max_sz_coin = max_sz_usd / best_px
+                        target_profit = self.get_target_profit(ex_buy, ex_sell, mrkt)
                         zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees + target_profit)
                         pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
                         if zero_profit_sell_px <= worst_px:
