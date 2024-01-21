@@ -125,11 +125,15 @@ class MultiBot:
 
     @try_exc_async
     async def amend_maker_order(self, deal, coin, order_id):
+        old_order = self.open_orders.get(coin)
+        if not old_order:
+            self.requests_in_progress.remove(coin)
+            return
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        client_id = self.open_orders[coin][1]['client_id']
+        client_id = old_order[1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
-        if price == self.open_orders[coin][1]['price']:
+        if price == old_order[1]['price']:
             self.requests_in_progress.remove(coin)
             return
         deal.update({'market': market,
