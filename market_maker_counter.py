@@ -59,6 +59,10 @@ class MarketFinder:
             return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
             return False
+        return self.timestamps_filter(ob_buy, ob_sell)
+
+    @try_exc_regular
+    def timestamps_filter(self, ob_buy, ob_sell):
         now_ts = time.time()
         buy_own_ts_ping = now_ts - ob_buy['ts_ms']
         sell_own_ts_ping = now_ts - ob_sell['ts_ms']
@@ -205,8 +209,8 @@ class MarketFinder:
         sell_deal = None
         top_deal = None
         if buy_deals:
-            buy_low = max([x['range'][0] for x in buy_deals])
-            buy_top = min([x['range'][1] for x in buy_deals])
+            buy_low = min([x['range'][0] for x in buy_deals])
+            buy_top = max([x['range'][1] for x in buy_deals])
             if buy_low > buy_top:  # TODO research if its possible at all
                 print(f"{buy_deals=}")
                 print(f"buy_low > buy_top! CHECK BUY DEALS\n\n\n")
@@ -221,8 +225,8 @@ class MarketFinder:
                 buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin,
                             'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)]}
         if sell_deals:
-            sell_low = max([x['range'][0] for x in sell_deals])
-            sell_top = min([x['range'][1] for x in sell_deals])
+            sell_low = min([x['range'][0] for x in sell_deals])
+            sell_top = max([x['range'][1] for x in sell_deals])
             if sell_low > sell_top:  # TODO research if its possible at all
                 print(f"{sell_deals=}")
                 print(f"sell_low > sell_top! CHECK SELL DEALS\n\n\n")
