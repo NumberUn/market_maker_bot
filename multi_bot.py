@@ -163,7 +163,6 @@ class MultiBot:
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
         mm_client.async_tasks.append(task)
-        self.open_orders.pop(coin + '-' + self.mm_exchange, None)
 
     @try_exc_regular
     def precise_size(self, coin, size):
