@@ -144,7 +144,7 @@ class MultiBot:
                      'price': price,
                      'size': size,
                      'side': old_order[1]['side'],
-                     'old_order': old_order[1]})
+                     'old_order_size': old_order[1]['size']})
         task = ['amend_order', deal]
         mm_client.async_tasks.append(task)
         for i in range(0, 50):
@@ -155,6 +155,8 @@ class MultiBot:
                 return
             await asyncio.sleep(0.1)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        self.telegram.send_message(f"ALERT! MAKER ORDER DIDN'T AMENDED\n{deal}", TG_Groups.MainGroup)
+
 
     @try_exc_async
     async def delete_maker_order(self, coin, order_id):
@@ -191,6 +193,8 @@ class MultiBot:
                 return
             await asyncio.sleep(0.1)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        self.telegram.send_message(f"ALERT! NEW MAKER ORDER DIDN'T PLACED\n{deal}", TG_Groups.MainGroup)
+
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
