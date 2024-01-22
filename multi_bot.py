@@ -155,9 +155,8 @@ class MultiBot:
                 return
             await asyncio.sleep(0.1)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
-        mm_client.cancel_all_orders(market)
+        # mm_client.cancel_all_orders(market)
         # self.telegram.send_message(f"ALERT! MAKER ORDER WAS NOT AMENDED\n{deal}", TG_Groups.MainGroup)
-
 
     @try_exc_async
     async def delete_maker_order(self, coin, order_id):
@@ -194,7 +193,7 @@ class MultiBot:
                 return
             await asyncio.sleep(0.1)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
-        mm_client.cancel_all_orders(market)
+        # mm_client.cancel_all_orders(market)
         # self.telegram.send_message(f"ALERT! NEW MAKER ORDER WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_async
@@ -243,7 +242,7 @@ class MultiBot:
                 self.create_and_send_deal_report_message(results)
                 return
             await asyncio.sleep(0.1)
-        best_client.cancel_all_orders(best_market)
+        # best_client.cancel_all_orders(best_market)
         # self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
