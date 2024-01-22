@@ -205,7 +205,7 @@ class MultiBot:
                 continue
             market = client.markets.get(deal['coin'])
             if market and client.instruments[market]['min_size'] <= deal['size']:
-                ob = client.get_orderbook(market)
+                ob = client.get_orderbook(market, True)
                 price = ob['asks'][2][0] if side == 'buy' else ob['bids'][2][0]
                 if best_price:
                     if side == 'buy':
@@ -225,22 +225,21 @@ class MultiBot:
                     best_market = market
                     best_client = client
                     best_ob = ob
-        if best_price:
-            client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + str(randint(1000, 10000000))
-            price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
-            best_client.async_tasks.append(['create_order', {'price': price,
-                                                             'size': size,
-                                                             'side': side,
-                                                             'market': best_market,
-                                                             'client_id': client_id}])
-            for i in range(0, 50):
-                if resp := best_client.responses.get(client_id):
-                    best_client.responses.pop(client_id)
-                    results = self.sort_deal_response_data(deal, resp, best_ob)
-                    self.create_and_send_deal_report_message(results)
-                    return
-                await asyncio.sleep(0.1)
-            self.telegram.send_message(f"ALERT! TAKER DEAL DIDN'T PLACED\n{deal}", TG_Groups.MainGroup)
+        client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + str(randint(1000, 10000000))
+        price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
+        best_client.async_tasks.append(['create_order', {'price': price,
+                                                         'size': size,
+                                                         'side': side,
+                                                         'market': best_market,
+                                                         'client_id': client_id}])
+        for i in range(0, 50):
+            if resp := best_client.responses.get(client_id):
+                best_client.responses.pop(client_id)
+                results = self.sort_deal_response_data(deal, resp, best_ob)
+                self.create_and_send_deal_report_message(results)
+                return
+            await asyncio.sleep(0.1)
+        self.telegram.send_message(f"ALERT! TAKER DEAL DIDN'T PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
     def get_deal_direction_maker(self, positions, results):
