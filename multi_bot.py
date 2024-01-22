@@ -147,13 +147,13 @@ class MultiBot:
                      'old_order_size': old_order[1]['size']})
         task = ['amend_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 50):
+        for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
                 return
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
         # mm_client.cancel_all_orders(market)
         # self.telegram.send_message(f"ALERT! MAKER ORDER WAS NOT AMENDED\n{deal}", TG_Groups.MainGroup)
@@ -185,13 +185,13 @@ class MultiBot:
                      'size': size})
         task = ['create_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 50):
+        for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
                 return
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
         # mm_client.cancel_all_orders(market)
         # self.telegram.send_message(f"ALERT! NEW MAKER ORDER WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
@@ -235,13 +235,13 @@ class MultiBot:
                                                          'side': side,
                                                          'market': best_market,
                                                          'client_id': client_id}])
-        for i in range(0, 50):
+        for i in range(0, 1000):
             if resp := best_client.responses.get(client_id):
                 best_client.responses.pop(client_id)
                 results = self.sort_deal_response_data(deal, resp, best_ob)
                 self.create_and_send_deal_report_message(results)
                 return
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.001)
         # best_client.cancel_all_orders(best_market)
         # self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
