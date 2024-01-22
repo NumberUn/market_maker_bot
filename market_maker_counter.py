@@ -1,5 +1,6 @@
 import asyncio
 from core.wrappers import try_exc_regular, try_exc_async
+import time
 
 
 class MarketFinder:
@@ -57,6 +58,19 @@ class MarketFinder:
         if not ob_buy.get('bids') or not ob_buy.get('asks'):
             return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
+            return False
+        now_ts = time.time()
+        buy_own_ts_ping = now_ts - ob_buy['ts_ms']
+        sell_own_ts_ping = now_ts - ob_sell['ts_ms']
+        if isinstance(ob_buy['timestamp'], float):
+            ts_buy = now_ts - ob_buy['timestamp']
+        else:
+            ts_buy = now_ts - ob_buy['timestamp'] / 1000
+        if isinstance(ob_sell['timestamp'], float):
+            ts_sell = now_ts - ob_sell['timestamp']
+        else:
+            ts_sell = now_ts - ob_sell['timestamp'] / 1000
+        if buy_own_ts_ping > 0.060 or sell_own_ts_ping > 0.060 or ts_sell > 0.15 or ts_buy > 0.15:
             return False
         return True
 
