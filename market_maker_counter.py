@@ -16,6 +16,7 @@ class MarketFinder:
         self.ob_level = self.multibot.count_ob_level
         self.profit_open = self.multibot.profit_open
         self.profit_close = self.multibot.profit_close
+        self.trade_mode = 'low'  # 'middle'
 
     def get_active_deal(self, coin):
         if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
@@ -213,37 +214,49 @@ class MarketFinder:
         sell_deal = None
         top_deal = None
         if buy_deals:
-            buy_low = min([x['range'][0] for x in buy_deals])
-            buy_top = max([x['range'][1] for x in buy_deals])
-            if buy_low > buy_top:  # TODO research if its possible at all
-                print(f"{buy_deals=}")
-                print(f"buy_low > buy_top! CHECK BUY DEALS\n\n\n")
-                if active_deal:
-                    self.delete_order(coin, active_deal[0])
-                    # return
-            else:
+            # buy_low = min([x['range'][0] for x in buy_deals])
+            # buy_top = max([x['range'][1] for x in buy_deals])
+            # if buy_low > buy_top:  # TODO research if its possible at all
+            #     print(f"{buy_deals=}")
+            #     print(f"buy_low > buy_top! CHECK BUY DEALS\n\n\n")
+            #     if active_deal:
+            #         self.delete_order(coin, active_deal[0])
+            #         # return
+            # else:
+                # price = (buy_low + buy_top) / 2
+            if self.trade_mode == 'low':
+                price = max([x['range'][1] for x in buy_deals])
+            elif self.trade_mode == 'middle':
+                buy_low = min([x['range'][0] for x in buy_deals])
+                buy_top = max([x['range'][1] for x in buy_deals])
                 price = (buy_low + buy_top) / 2
-                sell_price = buy_deals[0]['target'][0]
-                size = min(buy_deals[0]['max_sz_coin'], buy_deals[0]['target'][1])
-                profit = (sell_price - price) / price - buy_deals[0]['fees']
-                buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
-                            'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)], 'target': sell_price}
+            sell_price = buy_deals[0]['target'][0]
+            size = min(buy_deals[0]['max_sz_coin'], buy_deals[0]['target'][1])
+            profit = (sell_price - price) / price - buy_deals[0]['fees']
+            buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
+                        'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)], 'target': sell_price}
         if sell_deals:
-            sell_low = min([x['range'][0] for x in sell_deals])
-            sell_top = max([x['range'][1] for x in sell_deals])
-            if sell_low > sell_top:  # TODO research if its possible at all
-                print(f"{sell_deals=}")
-                print(f"sell_low > sell_top! CHECK SELL DEALS\n\n\n")
-                if active_deal:
-                    self.delete_order(coin, active_deal[0])
-                    # return
-            else:
+            # sell_low = min([x['range'][0] for x in sell_deals])
+            # sell_top = max([x['range'][1] for x in sell_deals])
+            # if sell_low > sell_top:  # TODO research if its possible at all
+            #     print(f"{sell_deals=}")
+            #     print(f"sell_low > sell_top! CHECK SELL DEALS\n\n\n")
+            #     if active_deal:
+            #         self.delete_order(coin, active_deal[0])
+            #         # return
+            # else:
+                # price = (sell_low + sell_top) / 2
+            if self.trade_mode == 'low':
+                price = min([x['range'][0] for x in sell_deals])
+            elif self.trade_mode == 'middle':
+                sell_low = min([x['range'][0] for x in sell_deals])
+                sell_top = max([x['range'][1] for x in sell_deals])
                 price = (sell_low + sell_top) / 2
-                buy_price = sell_deals[0]['target'][0]
-                size = min(sell_deals[0]['max_sz_coin'], sell_deals[0]['target'][1])
-                profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
-                sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
-                             'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)], 'target': buy_price}
+            buy_price = sell_deals[0]['target'][0]
+            size = min(sell_deals[0]['max_sz_coin'], sell_deals[0]['target'][1])
+            profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
+            sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
+                         'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)], 'target': buy_price}
         if sell_deal and buy_deal:
             top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
         elif sell_deal and not buy_deal:
