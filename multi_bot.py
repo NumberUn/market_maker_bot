@@ -156,7 +156,7 @@ class MultiBot:
                 return
             await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
-        self.open_orders.pop(coin + '-' + self.mm_exchange)
+        self.open_orders.pop(coin + '-' + self.mm_exchange, None)
         self.telegram.send_message(f"ALERT! MAKER ORDER WAS NOT AMENDED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_async
