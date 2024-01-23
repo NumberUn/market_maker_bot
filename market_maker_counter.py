@@ -224,11 +224,11 @@ class MarketFinder:
             #         # return
             # else:
                 # price = (buy_low + buy_top) / 2
+            buy_low = min([x['range'][0] for x in buy_deals])
+            buy_top = max([x['range'][1] for x in buy_deals])
             if self.trade_mode == 'low':
-                price = max([x['range'][1] for x in buy_deals])
+                price = buy_top
             elif self.trade_mode == 'middle':
-                buy_low = min([x['range'][0] for x in buy_deals])
-                buy_top = max([x['range'][1] for x in buy_deals])
                 price = (buy_low + buy_top) / 2
             sell_price = buy_deals[0]['target'][0]
             size = min(buy_deals[0]['max_sz_coin'], buy_deals[0]['target'][1])
@@ -246,11 +246,11 @@ class MarketFinder:
             #         # return
             # else:
                 # price = (sell_low + sell_top) / 2
+            sell_low = min([x['range'][0] for x in sell_deals])
+            sell_top = max([x['range'][1] for x in sell_deals])
             if self.trade_mode == 'low':
-                price = min([x['range'][0] for x in sell_deals])
+                price = sell_low
             elif self.trade_mode == 'middle':
-                sell_low = min([x['range'][0] for x in sell_deals])
-                sell_top = max([x['range'][1] for x in sell_deals])
                 price = (sell_low + sell_top) / 2
             buy_price = sell_deals[0]['target'][0]
             size = min(sell_deals[0]['max_sz_coin'], sell_deals[0]['target'][1])
