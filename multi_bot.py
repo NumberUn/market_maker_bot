@@ -210,17 +210,17 @@ class MultiBot:
             market = client.markets.get(deal['coin'])
             if market and client.instruments[market]['min_size'] <= deal['size']:
                 ob = client.get_orderbook(market)
-                price = ob['asks'][2][0] if side == 'buy' else ob['bids'][2][0]
+                price = ob['asks'][self.limit_order_shift][0] if side == 'buy' else ob['bids'][self.limit_order_shift][0]
                 if best_price:
                     if side == 'buy':
                         if best_price > price:
-                            best_price = price
+                            best_price = price * 1.01
                             best_market = market
                             best_client = client
                             best_ob = ob
                     else:
                         if best_price < price:
-                            best_price = price
+                            best_price = price * 0.99
                             best_market = market
                             best_client = client
                             best_ob = ob
