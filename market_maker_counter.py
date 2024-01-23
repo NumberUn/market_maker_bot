@@ -52,18 +52,17 @@ class MarketFinder:
         return False
 
     @try_exc_regular
-    def check_orderbooks(self, ob_buy, ob_sell):
+    def check_orderbooks(self, ob_buy: dict, ob_sell: dict, now_ts: float) -> bool:
         if not ob_buy or not ob_sell:
             return False
         if not ob_buy.get('bids') or not ob_buy.get('asks'):
             return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
             return False
-        return self.timestamps_filter(ob_buy, ob_sell)
+        return self.timestamps_filter(ob_buy, ob_sell, now_ts)
 
     @try_exc_regular
-    def timestamps_filter(self, ob_buy, ob_sell):
-        now_ts = time.time()
+    def timestamps_filter(self, ob_buy: dict, ob_sell: dict, now_ts: float) -> bool:
         buy_own_ts_ping = now_ts - ob_buy['ts_ms']
         sell_own_ts_ping = now_ts - ob_sell['ts_ms']
         if isinstance(ob_buy['timestamp'], float):
@@ -74,12 +73,12 @@ class MarketFinder:
             ts_sell = now_ts - ob_sell['timestamp']
         else:
             ts_sell = now_ts - ob_sell['timestamp'] / 1000
-        if buy_own_ts_ping > 0.060 or sell_own_ts_ping > 0.060 or ts_sell > 0.15 or ts_buy > 0.15:
+        if ts_sell > 0.2 or ts_buy > 0.2 or buy_own_ts_ping > 0.060 or sell_own_ts_ping > 0.060:
             return False
         return True
 
     @try_exc_regular
-    def get_range_buy_side(self, ob_buy, mrkt, top_bid, client_buy, active_px):
+    def get_range_buy_side(self, ob_buy: dict, mrkt: dict, top_bid: float, client_buy, active_px: float):
         tick = client_buy.instruments[mrkt['buy']]['tick_size']
         if active_px != top_bid:
             best_px = top_bid + tick
@@ -93,7 +92,7 @@ class MarketFinder:
         return best_px, worst_px
 
     @try_exc_regular
-    def get_range_sell_side(self, ob_sell, mrkt, top_ask, client_sell, active_px):
+    def get_range_sell_side(self, ob_sell: dict, mrkt: dict, top_ask: float, client_sell, active_px: float):
         tick = client_sell.instruments[mrkt['sell']]['tick_size']
         if active_px != top_ask:
             best_px = top_ask - tick
@@ -144,6 +143,8 @@ class MarketFinder:
         sell_deals = []
         active_deal = self.get_active_deal(coin)
         active_px = active_deal[1]['price'] if active_deal else 0
+        now_ts = time.time()
+        counts = 0
         for ex_buy, client_buy in self.clients_with_names.items():
             for ex_sell, client_sell in self.clients_with_names.items():
                 mrkt = self.check_exchanges(exchange, ex_buy, ex_sell, client_buy, client_sell, coin)
@@ -151,9 +152,10 @@ class MarketFinder:
                     continue
                 ob_buy = client_buy.get_orderbook(mrkt['buy'])
                 ob_sell = client_sell.get_orderbook(mrkt['sell'])
-                if not self.check_orderbooks(ob_buy, ob_sell):
+                if not self.check_orderbooks(ob_buy, ob_sell, now_ts):
                     # print(f"ORDERBOOKS FAILURE: {coin}")
                     continue
+                counts += 1
                 # BUY SIDE COUNTINGS
                 if ex_buy == self.mm_exchange:
                     top_bid = ob_buy['bids'][0][0]
@@ -201,10 +203,11 @@ class MarketFinder:
         #     for deal in buy_deals:
         #         print(f"SELL DEAL: {deal}")
         #     print('\n')
-        self.process_parse_results(sell_deals, buy_deals, coin, active_deal)
+        if counts:
+            self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
 
     @try_exc_regular
-    def get_top_deal(self, sell_deals, buy_deals, coin, active_deal):
+    def get_top_deal(self, sell_deals, buy_deals, coin, active_deal, now_ts):
         buy_deal = None
         sell_deal = None
         top_deal = None
@@ -222,7 +225,7 @@ class MarketFinder:
                 sell_price = buy_deals[0]['target'][0]
                 size = min(buy_deals[0]['max_sz_coin'], buy_deals[0]['target'][1])
                 profit = (sell_price - price) / price - buy_deals[0]['fees']
-                buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin,
+                buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
                             'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)]}
         if sell_deals:
             sell_low = min([x['range'][0] for x in sell_deals])
@@ -238,7 +241,7 @@ class MarketFinder:
                 buy_price = sell_deals[0]['target'][0]
                 size = min(sell_deals[0]['max_sz_coin'], sell_deals[0]['target'][1])
                 profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
-                sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin,
+                sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
                              'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)]}
         if sell_deal and buy_deal:
             top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
@@ -253,12 +256,14 @@ class MarketFinder:
         return top_deal, buy_deal, sell_deal
 
     @try_exc_regular
-    def process_parse_results(self, sell_deals, buy_deals, coin, active_deal):
-        top_deal, buy_deal, sell_deal = self.get_top_deal(sell_deals, buy_deals, coin, active_deal)
+    def process_parse_results(self, sell_deals, buy_deals, coin, active_deal, now_ts):
+        top_deal, buy_deal, sell_deal = self.get_top_deal(sell_deals, buy_deals, coin, active_deal, now_ts)
         if active_deal:
             if top_deal:
                 if top_deal['side'] == active_deal[1]['side']:
                     if top_deal['range'][0] <= active_deal[1]['price'] <= top_deal['range'][1]:
+                        self.multibot.open_orders[coin + '-' + self.multibot.mm_exchange][1].update(
+                            {'last_update': now_ts})
                         print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     else:
                         if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:

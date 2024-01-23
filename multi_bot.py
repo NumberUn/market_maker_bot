@@ -208,7 +208,7 @@ class MultiBot:
                 continue
             market = client.markets.get(deal['coin'])
             if market and client.instruments[market]['min_size'] <= deal['size']:
-                ob = client.get_orderbook(market, True)
+                ob = client.get_orderbook(market)
                 price = ob['asks'][2][0] if side == 'buy' else ob['bids'][2][0]
                 if best_price:
                     if side == 'buy':
@@ -237,13 +237,14 @@ class MultiBot:
                                                          'client_id': client_id}])
         for i in range(0, 1000):
             if resp := best_client.responses.get(client_id):
+                deal_stored = self.open_orders.get(deal['coin'] + self.mm_exchange)
                 best_client.responses.pop(client_id)
-                results = self.sort_deal_response_data(deal, resp, best_ob)
+                results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
                 self.create_and_send_deal_report_message(results)
                 return
             await asyncio.sleep(0.001)
         # best_client.cancel_all_orders(best_market)
-        # self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
+        self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
     def get_deal_direction_maker(self, positions, results):
@@ -275,9 +276,12 @@ class MultiBot:
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
-    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict) -> dict:
+    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict, deal_stored) -> dict:
         results = dict()
         results.update({'coin': maker_deal['coin'],
+                        'order id stored': deal_stored[0],
+                        'order id filled': maker_deal['order_id'],
+                        'last order update to fill': round(maker_deal['ts_ms'] - deal_stored[1]['last_update'], 5),
                         'taker order ping': round(taker_deal['create_order_time'], 5),
                         'taker ws ob ping': round(taker_ob['ts_ms'] - taker_ob['timestamp'], 5),
                         'taker ob age': round(maker_deal['timestamp'] - taker_ob['timestamp'], 5),
