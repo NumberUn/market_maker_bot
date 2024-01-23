@@ -59,7 +59,8 @@ class MarketFinder:
             return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
             return False
-        return self.timestamps_filter(ob_buy, ob_sell, now_ts)
+        # return self.timestamps_filter(ob_buy, ob_sell, now_ts)
+        return True
 
     @try_exc_regular
     def timestamps_filter(self, ob_buy: dict, ob_sell: dict, now_ts: float) -> bool:
@@ -226,7 +227,7 @@ class MarketFinder:
                 size = min(buy_deals[0]['max_sz_coin'], buy_deals[0]['target'][1])
                 profit = (sell_price - price) / price - buy_deals[0]['fees']
                 buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
-                            'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)]}
+                            'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)], 'target': sell_price}
         if sell_deals:
             sell_low = min([x['range'][0] for x in sell_deals])
             sell_top = max([x['range'][1] for x in sell_deals])
@@ -242,7 +243,7 @@ class MarketFinder:
                 size = min(sell_deals[0]['max_sz_coin'], sell_deals[0]['target'][1])
                 profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
                 sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
-                             'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)]}
+                             'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)], 'target': buy_price}
         if sell_deal and buy_deal:
             top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
         elif sell_deal and not buy_deal:

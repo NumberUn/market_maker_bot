@@ -279,6 +279,7 @@ class MultiBot:
     def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict, deal_stored) -> dict:
         results = dict()
         last_upd = deal_stored[1]['last_update'] if deal_stored else 0
+        target_price = deal_stored[1]['target'] if deal_stored else None
         results.update({'coin': maker_deal['coin'],
                         'order id stored': deal_stored[0] if deal_stored else deal_stored,
                         'order id filled': maker_deal['order_id'],
@@ -294,6 +295,7 @@ class MultiBot:
                         'maker price': maker_deal['price'],
                         'maker size': maker_deal['size'],
                         'taker price': taker_deal['price'],
+                        'target taker price': target_price,
                         'taker size': taker_deal['size'],
                         'taker fee': round(self.clients_with_names[taker_deal['exchange_name']].taker_fee, 5),
                         'maker fee': round(self.clients_with_names[self.mm_exchange].maker_fee, 5)})
