@@ -33,7 +33,7 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'TG_Groups']
+                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'main_group']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -80,7 +80,7 @@ class MultiBot:
         self.run_sub_processes()
         self.requests_in_progress = []
         self.deleted_orders = []
-        self.TG_groups = TG_Groups
+        self.main_group = TG_Groups.MainGroup
 
     @try_exc_regular
     def get_default_launch_config(self):
