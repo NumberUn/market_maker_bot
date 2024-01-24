@@ -225,7 +225,7 @@ class MultiBot:
                             best_client = client
                             best_ob = ob
                 else:
-                    best_price = price
+                    best_price = price * 1.01 if side == 'buy' else price * 0.99
                     best_market = market
                     best_client = client
                     best_ob = ob
