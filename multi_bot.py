@@ -33,7 +33,7 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level']
+                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'TG_Groups']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -80,6 +80,7 @@ class MultiBot:
         self.run_sub_processes()
         self.requests_in_progress = []
         self.deleted_orders = []
+        self.TG_groups = TG_Groups
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -304,7 +305,7 @@ class MultiBot:
                         'maker-taker ping': round(taker_deal['timestamp'] - maker_deal['timestamp'], 5),
                         'ping got fill -> send': round(taker_deal['time_order_sent'] - maker_deal['ts_ms'], 5),
                         'taker exchange': taker_deal['exchange_name'],
-                        'maker exchange': self.mm_exchange,
+                        'maker exchange': maker_deal['exchange_name'],
                         'maker side': maker_deal['side'],
                         'maker price': maker_deal['price'],
                         'maker size': maker_deal['size'],
