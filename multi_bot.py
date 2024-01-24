@@ -13,7 +13,8 @@ from core.database import DB
 from core.rabbit import Rabbit
 from core.telegram import Telegram, TG_Groups
 from core.wrappers import try_exc_regular, try_exc_async
-from random import randint
+import random
+import string
 
 config = configparser.ConfigParser()
 config.read(sys.argv[1], "utf-8")
@@ -177,7 +178,8 @@ class MultiBot:
     async def new_maker_order(self, deal, coin):
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        client_id = f'maker-{mm_client.EXCHANGE_NAME}-' + coin + '-' + str(randint(1, 999999999999999))
+        rand_id = ''.join([random.choice(string.ascii_letters + string.digits) for x in range(16)])
+        client_id = f'maker-{mm_client.EXCHANGE_NAME}-' + coin + '-' + rand_id
         size = self.precise_size(coin, deal['size'])
         price, size = mm_client.fit_sizes(deal['price'], size, market)
         deal.update({'market': market,
@@ -229,7 +231,8 @@ class MultiBot:
                     best_market = market
                     best_client = client
                     best_ob = ob
-        client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + str(randint(1, 999999999999999))
+        rand_id = ''.join([random.choice(string.ascii_letters + string.digits) for x in range(16)])
+        client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + rand_id
         price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
         best_client.async_tasks.append(['create_order', {'price': price,
                                                          'size': size,
