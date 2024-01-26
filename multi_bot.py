@@ -33,7 +33,7 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'main_group']
+                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -80,7 +80,6 @@ class MultiBot:
         self.run_sub_processes()
         self.requests_in_progress = []
         self.deleted_orders = []
-        self.main_group = TG_Groups.MainGroup
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -203,45 +202,35 @@ class MultiBot:
     @try_exc_async
     async def hedge_maker_position(self, deal):
         side = 'buy' if deal['side'] == 'sell' else 'sell'
-        # best_market = None
-        # best_price = None
-        # best_client = None
-        # best_ob = None
-        # for client in self.clients:
-            # if self.mm_exchange == client.EXCHANGE_NAME:
-            #     continue
-            # market = client.markets.get(deal['coin'])
-            # if market and client.instruments[market]['min_size'] <= deal['size']:
-            #     ob = client.get_orderbook(market)
-            #     price = ob['asks'][self.limit_order_shift][0] if side == 'buy' else ob['bids'][self.limit_order_shift][0]
-            #     if best_price:
-            #         if side == 'buy':
-            #             if best_price > price:
-            #                 best_price = price * 1.01
-            #                 best_market = market
-            #                 best_client = client
-            #                 best_ob = ob
-            #         else:
-            #             if best_price < price:
-            #                 best_price = price * 0.99
-            #                 best_market = market
-            #                 best_client = client
-            #                 best_ob = ob
-            #     else:
-            #         best_price = price * 1.01 if side == 'buy' else price * 0.99
-            #         best_market = market
-            #         best_client = client
-            #         best_ob = ob
-            #
-        client = self.clients_with_names[self.mm_exchange]
-        market = client.markets.get(deal['coin'])
-        # if market and client.instruments[market]['min_size'] <= deal['size']:
-        ob = client.get_orderbook(market)
-        price = ob['asks'][self.limit_order_shift][0] if side == 'buy' else ob['bids'][self.limit_order_shift][0]
-        best_price = price * 1.01 if side == 'buy' else price * 0.99
-        best_market = market
-        best_client = client
-        best_ob = ob
+        best_market = None
+        best_price = None
+        best_client = None
+        best_ob = None
+        for client in self.clients:
+            if self.mm_exchange == client.EXCHANGE_NAME:
+                continue
+            market = client.markets.get(deal['coin'])
+            if market and client.instruments[market]['min_size'] <= deal['size']:
+                ob = client.get_orderbook(market)
+                price = ob['asks'][self.limit_order_shift][0] if side == 'buy' else ob['bids'][self.limit_order_shift][0]
+                if best_price:
+                    if side == 'buy':
+                        if best_price > price:
+                            best_price = price * 1.01
+                            best_market = market
+                            best_client = client
+                            best_ob = ob
+                    else:
+                        if best_price < price:
+                            best_price = price * 0.99
+                            best_market = market
+                            best_client = client
+                            best_ob = ob
+                else:
+                    best_price = price * 1.01 if side == 'buy' else price * 0.99
+                    best_market = market
+                    best_client = client
+                    best_ob = ob
         rand_id = ''.join([random.choice(string.ascii_letters + string.digits) for x in range(16)])
         client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + rand_id
         price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
@@ -305,7 +294,7 @@ class MultiBot:
                         'maker-taker ping': round(taker_deal['timestamp'] - maker_deal['timestamp'], 5),
                         'ping got fill -> send': round(taker_deal['time_order_sent'] - maker_deal['ts_ms'], 5),
                         'taker exchange': taker_deal['exchange_name'],
-                        'maker exchange': maker_deal['exchange_name'],
+                        'maker exchange': self.mm_exchange,
                         'maker side': maker_deal['side'],
                         'maker price': maker_deal['price'],
                         'maker size': maker_deal['size'],
