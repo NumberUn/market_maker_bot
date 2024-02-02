@@ -122,11 +122,17 @@ class MarketFinder:
             buy_close = True if pos_buy['amount_usd'] < 0 else False
         if pos_sell := poses[exchange_sell].get(sell_market):
             sell_close = True if pos_sell['amount_usd'] > 0 else False
+        print("POSES:", poses)
+        print(f'BUY: {exchange_buy} {buy_market} {pos_buy}')
+        print(f'SELL: {exchange_sell} {sell_market} {pos_sell}')
         if buy_close and sell_close:
+            print('CLOSE\n')
             return 'close'
         elif not buy_close and not sell_close:
+            print('OPEN\n')
             return 'open'
         else:
+            print('HALF CLOSE\n')
             return 'half_close'
 
     @try_exc_regular
@@ -211,8 +217,8 @@ class MarketFinder:
         #     for deal in buy_deals:
         #         print(f"SELL DEAL: {deal}")
         #     print('\n')
-        if counts:
-            self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
+        # if counts:
+        #     self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
 
     @try_exc_regular
     def get_top_deal(self, sell_deals, buy_deals, coin, active_deal, now_ts):
