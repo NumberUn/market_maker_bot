@@ -85,7 +85,10 @@ class MarketFinder:
         if active_px != top_bid:
             best_px = top_bid + tick
         else:
-            best_px = ob_buy['bids'][1][0] + tick
+            if len(ob_buy['bids']) > 1:
+                best_px = ob_buy['bids'][1][0] + tick
+            else:
+                best_px = ob_buy['bids'][0][0] - 2 * tick
         if best_px == ob_buy['asks'][0][0]:
             best_px = top_bid
             worst_px = best_px
@@ -99,7 +102,10 @@ class MarketFinder:
         if active_px != top_ask:
             best_px = top_ask - tick
         else:
-            best_px = ob_sell['asks'][1][0] - tick
+            if len(ob_sell['asks']) > 1:
+                best_px = ob_sell['asks'][1][0] - tick
+            else:
+                best_px = ob_sell['asks'][0][0] + 2 * tick
         if best_px == ob_sell['bids'][0][0]:
             best_px = top_ask
             worst_px = best_px

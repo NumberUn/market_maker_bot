@@ -49,8 +49,8 @@ class MultiBot:
         # ORDER CONFIGS
         self.max_order_size_usd = int(self.setts['ORDER_SIZE'])
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
-        self.limit_order_shift = 0  # int(self.setts['LIMIT_SHIFTS'])
-        self.count_ob_level = 0  # int(self.setts['MAKER_SHIFTS'])
+        self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
+        self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
         self.profit_open = float(self.setts['PROFIT_OPEN'])
         self.profit_close = float(self.setts['PROFIT_CLOSE'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
