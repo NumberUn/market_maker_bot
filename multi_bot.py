@@ -244,14 +244,14 @@ class MultiBot:
                                                          'side': side,
                                                          'market': best_market,
                                                          'client_id': client_id}])
-        for i in range(0, 1000):
-            if resp := best_client.responses.get(client_id):
-                deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
-                best_client.responses.pop(client_id)
-                results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
-                self.create_and_send_deal_report_message(results)
-                return
-            await asyncio.sleep(0.001)
+        await asyncio.sleep(0.1)
+        if resp := best_client.responses.get(client_id):
+            deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
+            best_client.responses.pop(client_id)
+            results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
+            self.create_and_send_deal_report_message(results)
+            return
+
         # best_client.cancel_all_orders(best_market)
         self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
