@@ -50,7 +50,7 @@ class MultiBot:
         self.max_order_size_usd = int(self.setts['ORDER_SIZE'])
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
         self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
-        self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
+        self.count_ob_level = 0  # int(self.setts['MAKER_SHIFTS'])
         self.profit_open = float(self.setts['PROFIT_OPEN'])
         self.profit_close = float(self.setts['PROFIT_CLOSE'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
@@ -174,12 +174,17 @@ class MultiBot:
         perfect_size = math.floor(size / step_size) * step_size
         return perfect_size
 
+    @staticmethod
+    @try_exc_regular
+    def id_generator(size=6, chars=string.ascii_letters):
+        return ''.join(random.choice(chars) for _ in range(size))
+
     @try_exc_async
     async def new_maker_order(self, deal, coin):
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        rand_id = ''.join([random.choice(string.ascii_letters + string.digits) for x in range(16)])
-        client_id = f'maker-{mm_client.EXCHANGE_NAME}-' + coin + '-' + rand_id
+        rand_id = self.id_generator()
+        client_id = f'makerxxx{mm_client.EXCHANGE_NAME}xxx' + coin + 'xxx' + rand_id
         size = self.precise_size(coin, deal['size'])
         price, size = mm_client.fit_sizes(deal['price'], size, market)
         deal.update({'market': market,
@@ -232,7 +237,7 @@ class MultiBot:
                     best_client = client
                     best_ob = ob
         rand_id = ''.join([random.choice(string.ascii_letters + string.digits) for x in range(16)])
-        client_id = f'taker-{best_client.EXCHANGE_NAME}-' + deal['coin'] + '-' + rand_id
+        client_id = f'takerxxx{best_client.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
         price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
         best_client.async_tasks.append(['create_order', {'price': price,
                                                          'size': size,
