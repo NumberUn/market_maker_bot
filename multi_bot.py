@@ -236,7 +236,7 @@ class MultiBot:
                     best_market = market
                     best_client = client
                     best_ob = ob
-        rand_id = ''.join([random.choice(string.ascii_letters + string.digits) for x in range(16)])
+        rand_id = self.id_generator()
         client_id = f'takerxxx{best_client.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
         price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
         best_client.async_tasks.append(['create_order', {'price': price,
