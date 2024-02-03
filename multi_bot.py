@@ -166,6 +166,8 @@ class MultiBot:
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
         mm_client.async_tasks.append(task)
+        await asyncio.sleep(0.01)
+        self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
 
     @try_exc_regular
     def precise_size(self, coin, size):
