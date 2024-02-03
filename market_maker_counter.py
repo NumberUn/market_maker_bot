@@ -16,7 +16,7 @@ class MarketFinder:
         self.ob_level = self.multibot.count_ob_level
         self.profit_open = self.multibot.profit_open
         self.profit_close = self.multibot.profit_close
-        self.trade_mode = 'low'  # 'middle'
+        self.trade_mode = 'middle'
 
     def get_active_deal(self, coin):
         if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
@@ -276,7 +276,7 @@ class MarketFinder:
                             return
                         self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
                         self.amend_order(top_deal, coin, active_deal[0])
-                        print(f"AMEND\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
+                        # print(f"AMEND\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
                 else:
                     if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
                         # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
@@ -284,7 +284,7 @@ class MarketFinder:
                     self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
                     self.delete_order(coin, active_deal[0])
                     self.new_order(top_deal, coin)
-                    print(f"CHANGE SIDE\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
+                    # print(f"CHANGE SIDE\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
             else:
                 # if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
                 #     # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
