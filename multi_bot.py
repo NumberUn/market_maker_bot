@@ -162,7 +162,6 @@ class MultiBot:
 
     @try_exc_async
     async def delete_maker_order(self, coin, order_id):
-        self.deleted_orders.append(order_id)
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
