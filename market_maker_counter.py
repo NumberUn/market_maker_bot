@@ -94,7 +94,7 @@ class MarketFinder:
             worst_px = best_px
         else:
             worst_px = ob_buy['asks'][0][0] - tick
-        return best_px, worst_px
+        return best_px, worst_px, tick
 
     @try_exc_regular
     def get_range_sell_side(self, ob_sell: dict, mrkt: dict, top_ask: float, client_sell, active_px: float):
@@ -111,7 +111,7 @@ class MarketFinder:
             worst_px = best_px
         else:
             worst_px = ob_sell['bids'][0][0] + tick
-        return best_px, worst_px
+        return best_px, worst_px, tick
 
     @try_exc_regular
     def get_deal_direction(self, exchange_buy, exchange_sell, buy_market, sell_market, max_sz_coin):
@@ -171,13 +171,13 @@ class MarketFinder:
                     # low_profit = (ob_sell['bids'][self.ob_level][0] - worst_px) / worst_px - fees
                     # print(f"{coin} BUY PROFIT RANGE: {round(top_profit, 6)} - {round(low_profit, 6)}")
                     if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_bid):
-                        best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
+                        best_px, worst_px, tick = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         max_sz_coin = max_sz_usd / best_px
                         direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], max_sz_coin)
                         target_profit = self.get_target_profit(direction)
                         zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees - target_profit)
-                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin, 'direction': direction}
+                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin, 'direction': direction, 'tick': tick}
                         if zero_profit_buy_px >= worst_px:
                             pot_deal.update({'range': [best_px, worst_px], 'target': ob_sell['bids'][self.ob_level]})
                             buy_deals.append(pot_deal)
@@ -192,13 +192,13 @@ class MarketFinder:
                     # low_profit = (worst_px - ob_buy['asks'][self.ob_level][0]) / ob_buy['asks'][self.ob_level][0] - fees
                     # print(f"{coin} SELL PROFIT RANGE: {round(top_profit, 6)} - {round(low_profit, 6)}")
                     if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_ask):
-                        best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
+                        best_px, worst_px, tick = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         max_sz_coin = max_sz_usd / best_px
                         direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], max_sz_coin)
                         target_profit = self.get_target_profit(direction)
                         zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees + target_profit)
-                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin, 'direction': direction}
+                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin, 'direction': direction, 'tick': tick}
                         if zero_profit_sell_px <= worst_px:
                             pot_deal.update({'range': [worst_px, best_px], 'target': ob_buy['asks'][self.ob_level]})
                             sell_deals.append(pot_deal)
@@ -221,16 +221,6 @@ class MarketFinder:
         sell_deal = None
         top_deal = None
         if buy_deals:
-            # buy_low = min([x['range'][0] for x in buy_deals])
-            # buy_top = max([x['range'][1] for x in buy_deals])
-            # if buy_low > buy_top:  # TODO research if its possible at all
-            #     print(f"{buy_deals=}")
-            #     print(f"buy_low > buy_top! CHECK BUY DEALS\n\n\n")
-            #     if active_deal:
-            #         self.delete_order(coin, active_deal[0])
-            #         # return
-            # else:
-                # price = (buy_low + buy_top) / 2
             buy_low = min([x['range'][0] for x in buy_deals])
             buy_top = max([x['range'][1] for x in buy_deals])
             if self.trade_mode == 'low':
@@ -242,18 +232,8 @@ class MarketFinder:
             profit = (sell_price - price) / price - buy_deals[0]['fees']
             buy_deal = {'side': 'buy', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
                         'profit': profit, 'range': [round(buy_low, 8), round(buy_top, 8)], 'target': sell_price,
-                        'direction': buy_deals[0]['direction']}
+                        'direction': buy_deals[0]['direction'], 'tick': buy_deals[0]['tick']}
         if sell_deals:
-            # sell_low = min([x['range'][0] for x in sell_deals])
-            # sell_top = max([x['range'][1] for x in sell_deals])
-            # if sell_low > sell_top:  # TODO research if its possible at all
-            #     print(f"{sell_deals=}")
-            #     print(f"sell_low > sell_top! CHECK SELL DEALS\n\n\n")
-            #     if active_deal:
-            #         self.delete_order(coin, active_deal[0])
-            #         # return
-            # else:
-                # price = (sell_low + sell_top) / 2
             sell_low = min([x['range'][0] for x in sell_deals])
             sell_top = max([x['range'][1] for x in sell_deals])
             if self.trade_mode == 'low':
@@ -265,7 +245,7 @@ class MarketFinder:
             profit = (price - buy_price) / buy_price - sell_deals[0]['fees']
             sell_deal = {'side': 'sell', 'price': price, 'size': size, 'coin': coin, 'last_update': now_ts,
                          'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)], 'target': buy_price,
-                         'direction': sell_deals[0]['direction']}
+                         'direction': sell_deals[0]['direction'], 'tick': sell_deals[0]['tick']}
         if sell_deal and buy_deal:
             top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
         elif sell_deal and not buy_deal:
@@ -284,7 +264,8 @@ class MarketFinder:
         if active_deal:
             if top_deal:
                 if top_deal['side'] == active_deal[1]['side']:
-                    if top_deal['range'][0] <= active_deal[1]['price'] <= top_deal['range'][1]:
+                    tick = top_deal['tick']
+                    if top_deal['range'][0] - tick < active_deal[1]['price'] < top_deal['range'][1] + tick:
                         self.multibot.open_orders[coin + '-' + self.multibot.mm_exchange][1].update(
                             {'last_update': now_ts})
                         # print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")

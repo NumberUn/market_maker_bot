@@ -137,9 +137,9 @@ class MultiBot:
         market = mm_client.markets[coin]
         client_id = old_order[1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
-        if price == old_order[1]['price']:
-            self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
-            return
+        # if price == old_order[1]['price']:
+        #     self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        #     return
         deal.update({'market': market,
                      'order_id': order_id,
                      'client_id': client_id,
