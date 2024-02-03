@@ -289,7 +289,7 @@ class MarketFinder:
                 # if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
                 #     # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                 #     return
-                self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                # self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
                 self.delete_order(coin, active_deal[0])
                 # print(f"DELETE\nORDER: {active_deal}")
         else:
