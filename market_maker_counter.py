@@ -212,8 +212,8 @@ class MarketFinder:
         #     for deal in buy_deals:
         #         print(f"SELL DEAL: {deal}")
         #     print('\n')
-        # if counts:
-        #     self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
+        if counts:
+            self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
 
     @try_exc_regular
     def get_top_deal(self, sell_deals, buy_deals, coin, active_deal, now_ts):
