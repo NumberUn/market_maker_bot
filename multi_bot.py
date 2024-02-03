@@ -277,10 +277,9 @@ class MultiBot:
 
     @try_exc_regular
     def create_and_send_deal_report_message(self, results: dict):
-        poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
-        direction = self.get_deal_direction_maker(poses, results)
+        # poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
+        # direction = self.get_deal_direction_maker(poses, results)
         message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}\n'
-        message += f"DIRECTION: {str(direction).upper()}\n"
         for key, value in results.items():
             message += key.upper() + ': ' + str(value) + '\n'
         self.telegram.send_message(message, TG_Groups.MainGroup)
@@ -290,7 +289,9 @@ class MultiBot:
         results = dict()
         last_upd = deal_stored[1]['last_update'] if deal_stored else 0
         target_price = deal_stored[1]['target'] if deal_stored else None
-        results.update({'coin': maker_deal['coin'],
+        direction = deal_stored[1]['direction'] if deal_stored else 'guess'
+        results.update({'direction': direction,
+                        'coin': maker_deal['coin'],
                         'order id stored': deal_stored[0] if deal_stored else deal_stored,
                         'order id filled': maker_deal['order_id'],
                         'last order update to fill': round(maker_deal['ts_ms'] - last_upd, 5),
@@ -322,7 +323,7 @@ class MultiBot:
                         'absolute profit usd': round(rel_profit * results['taker size'] * results['taker price'], 6),
                         'disbalance coin': round(results['taker size'] - results['maker size'], 8),
                         'disbalance usd': round((results['taker size'] - results['maker size']) * results['taker price'], 6),
-                        'total fee usd': round(fees * results['taker size'], 6)})
+                        'total fee usd': round(fees * results['taker size'] * taker_deal['price'], 6)})
         return results
 
     @try_exc_async

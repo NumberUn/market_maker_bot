@@ -114,7 +114,7 @@ class MarketFinder:
         return best_px, worst_px
 
     @try_exc_regular
-    def get_deal_direction(self, exchange_buy, exchange_sell, buy_market, sell_market):
+    def get_deal_direction(self, exchange_buy, exchange_sell, buy_market, sell_market, max_sz_coin):
         poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
         buy_close = False
         sell_close = False
@@ -122,32 +122,25 @@ class MarketFinder:
             buy_close = True if pos_buy['amount_usd'] < 0 else False
         if pos_sell := poses[exchange_sell].get(sell_market):
             sell_close = True if pos_sell['amount_usd'] > 0 else False
-        print("POSES:", poses)
-        print(f'BUY: {exchange_buy} {buy_market} {pos_buy}')
-        print(f'SELL: {exchange_sell} {sell_market} {pos_sell}')
-        if buy_close and sell_close:
-            print('CLOSE\n')
+        # print("POSES:", poses)
+        # print(f'BUY: {exchange_buy} {buy_market} {pos_buy}')
+        # print(f'SELL: {exchange_sell} {sell_market} {pos_sell}')
+        if buy_close and sell_close and max_sz_coin < pos_sell['amount'] and max_sz_coin < abs(pos_buy['amount']):
+            # print('CLOSE\n')
             return 'close'
-        elif not buy_close and not sell_close:
-            print('OPEN\n')
-            return 'open'
         else:
-            print('HALF CLOSE\n')
-            return 'half_close'
+            # print('OPEN\n')
+            return 'open'
 
     @try_exc_regular
     def count_direction_profit(self, deal_direction):
         if deal_direction == 'open':
-            target_profit = self.profit_open
+            return self.profit_open
         elif deal_direction == 'close':
-            target_profit = self.profit_close
-        else:
-            target_profit = (self.profit_open + self.profit_close) / 2
-        return target_profit
+            return self.profit_close
 
     @try_exc_regular
-    def get_target_profit(self, ex_buy, ex_sell, mrkt):
-        direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'])
+    def get_target_profit(self, direction):
         target_profit = self.count_direction_profit(direction)
         return target_profit
 
@@ -181,9 +174,10 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         max_sz_coin = max_sz_usd / best_px
-                        target_profit = self.get_target_profit(ex_buy, ex_sell, mrkt)
+                        direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], max_sz_coin)
+                        target_profit = self.get_target_profit(direction)
                         zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees - target_profit)
-                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
+                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin, 'direction': direction}
                         if zero_profit_buy_px >= worst_px:
                             pot_deal.update({'range': [best_px, worst_px], 'target': ob_sell['bids'][self.ob_level]})
                             buy_deals.append(pot_deal)
@@ -201,9 +195,10 @@ class MarketFinder:
                         best_px, worst_px = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         max_sz_coin = max_sz_usd / best_px
-                        target_profit = self.get_target_profit(ex_buy, ex_sell, mrkt)
+                        direction = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], max_sz_coin)
+                        target_profit = self.get_target_profit(direction)
                         zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees + target_profit)
-                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin}
+                        pot_deal = {'fees': fees, 'max_sz_coin': max_sz_coin, 'direction': direction}
                         if zero_profit_sell_px <= worst_px:
                             pot_deal.update({'range': [worst_px, best_px], 'target': ob_buy['asks'][self.ob_level]})
                             sell_deals.append(pot_deal)
