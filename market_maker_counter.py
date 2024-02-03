@@ -294,7 +294,7 @@ class MarketFinder:
                             return
                         self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
                         self.amend_order(top_deal, coin, active_deal[0])
-                        # print(f"AMEND\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
+                        print(f"AMEND\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
                 else:
                     if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
                         # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
@@ -302,12 +302,12 @@ class MarketFinder:
                     self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
                     self.delete_order(coin, active_deal[0])
                     self.new_order(top_deal, coin)
-                    # print(f"CHANGE SIDE\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
+                    print(f"CHANGE SIDE\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
             else:
                 if active_deal[0] in self.multibot.deleted_orders:
                     return
                 self.delete_order(coin, active_deal[0])
-                # print(f"DELETE\nORDER: {active_deal[0]}")
+                print(f"DELETE\nORDER: {active_deal}")
         else:
             if top_deal:
                 if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
@@ -315,7 +315,7 @@ class MarketFinder:
                     return
                 self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
                 self.new_order(top_deal, coin)
-                # print(f"CREATE NEW ORDER {coin} {top_deal}\n")
+                print(f"CREATE NEW ORDER {coin} {top_deal}\n")
 
 
 if __name__ == '__main__':
