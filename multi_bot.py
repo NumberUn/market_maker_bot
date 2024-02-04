@@ -158,6 +158,7 @@ class MultiBot:
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+                return
             await asyncio.sleep(0.001)
         await self.delete_maker_order(coin, order_id)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
@@ -201,7 +202,7 @@ class MultiBot:
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
                 if self.open_orders.get(coin + '-' + self.mm_exchange):
-                    print(f"CREATE ERROR: {self.open_orders[coin + '-' + self.mm_exchange]} -> {resp}")
+                    print(f"CREATE: {self.open_orders[coin + '-' + self.mm_exchange]} -> {resp}")
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
