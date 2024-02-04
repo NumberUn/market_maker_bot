@@ -129,7 +129,9 @@ class MultiBot:
     @try_exc_async
     async def amend_maker_order(self, deal, coin, order_id):
         old_order = self.open_orders.get(coin + '-' + self.mm_exchange)
-        if not old_order:
+        if not old_order or old_order[0] != order_id:
+            if old_order:
+                print(f'AMEND MAKER ORDER WRONG ORDER_ID: {old_order}')
             await self.delete_maker_order(coin, order_id)
             self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
             return
@@ -156,6 +158,7 @@ class MultiBot:
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
                 return
             await asyncio.sleep(0.001)
+        await self.delete_maker_order(coin, order_id)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
         self.open_orders.pop(coin + '-' + self.mm_exchange, None)
         # self.telegram.send_message(f"ALERT! MAKER ORDER WAS NOT AMENDED\n{deal}", TG_Groups.MainGroup)
@@ -203,7 +206,7 @@ class MultiBot:
             await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
         # mm_client.cancel_all_orders(market)
-        # self.telegram.send_message(f"ALERT! NEW MAKER ORDER WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
+        print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal}")
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
