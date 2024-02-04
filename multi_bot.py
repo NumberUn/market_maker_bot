@@ -248,7 +248,7 @@ class MultiBot:
         await asyncio.sleep(0.2)
         if resp := best_client.responses.get(client_id):
             deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
-            if not deal_stored:
+            if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
                 deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
             print(f"STORED DEAL: {deal_stored}")
             best_client.responses.pop(client_id)
