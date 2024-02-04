@@ -78,7 +78,7 @@ class MultiBot:
         self._loop = asyncio.new_event_loop()
         self.rabbit = Rabbit(self._loop)
         self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
-        self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
+        # self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
         self.requests_in_progress = []
 
@@ -253,8 +253,8 @@ class MultiBot:
                                                          'client_id': client_id}])
         await asyncio.sleep(0.1)
         if resp := best_client.responses.get(client_id):
-            if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
-                deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
+            # if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
+            #     deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
             print(f"STORED DEAL: {deal_stored}")
             best_client.responses.pop(client_id)
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
