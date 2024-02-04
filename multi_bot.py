@@ -245,7 +245,7 @@ class MultiBot:
                                                          'side': side,
                                                          'market': best_market,
                                                          'client_id': client_id}])
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
         if resp := best_client.responses.get(client_id):
             deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
             print(f"STORED DEAL: {deal_stored}")
