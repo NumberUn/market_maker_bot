@@ -201,8 +201,6 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
-                if self.open_orders.get(coin + '-' + self.mm_exchange):
-                    print(f"CREATE: {self.open_orders[coin + '-' + self.mm_exchange]} -> {resp}")
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
@@ -210,7 +208,7 @@ class MultiBot:
             await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
         # mm_client.cancel_all_orders(market)
-        print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
+        # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
