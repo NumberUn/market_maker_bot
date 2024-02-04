@@ -79,7 +79,6 @@ class MultiBot:
         self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
         self.requests_in_progress = []
-        self.deleted_orders = []
 
     @try_exc_regular
     def get_default_launch_config(self):
