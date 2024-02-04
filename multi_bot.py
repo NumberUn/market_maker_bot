@@ -152,7 +152,7 @@ class MultiBot:
                      'old_order_size': old_order[1]['size']})
         task = ['amend_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 1000):
+        for i in range(0, 100):
             if resp := mm_client.responses.get(client_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
@@ -199,7 +199,7 @@ class MultiBot:
                      'size': size})
         task = ['create_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 1000):
+        for i in range(0, 100):
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
@@ -212,6 +212,7 @@ class MultiBot:
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
+        deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
         side = 'buy' if deal['side'] == 'sell' else 'sell'
         best_market = None
         best_price = None
@@ -252,7 +253,6 @@ class MultiBot:
                                                          'client_id': client_id}])
         await asyncio.sleep(0.2)
         if resp := best_client.responses.get(client_id):
-            deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
             if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
                 deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
             print(f"STORED DEAL: {deal_stored}")
