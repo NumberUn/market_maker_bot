@@ -152,7 +152,7 @@ class MultiBot:
                      'old_order_size': old_order[1]['size']})
         task = ['amend_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 100):
+        for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
@@ -199,7 +199,7 @@ class MultiBot:
                      'size': size})
         task = ['create_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 100):
+        for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
@@ -251,7 +251,7 @@ class MultiBot:
                                                          'side': side,
                                                          'market': best_market,
                                                          'client_id': client_id}])
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.1)
         if resp := best_client.responses.get(client_id):
             if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
                 deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
