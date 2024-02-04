@@ -154,6 +154,7 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
+                print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
@@ -200,6 +201,7 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
+                print(f"CREATE: {self.open_orders.get(coin + '-' + self.mm_exchange, [''])[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
