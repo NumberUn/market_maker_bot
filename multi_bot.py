@@ -33,7 +33,7 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders']
+                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -48,6 +48,7 @@ class MultiBot:
                               'max_order_usd', 'max_leverage', 'shift_use_flag']
         # ORDER CONFIGS
         self.max_order_size_usd = int(self.setts['ORDER_SIZE'])
+        self.min_size = int(self.setts['MIN_ORDER_SIZE'])
         self.max_position_part = float(self.setts['PERCENT_PER_MARKET'])
         self.limit_order_shift = int(self.setts['LIMIT_SHIFTS'])
         self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
@@ -388,6 +389,8 @@ class MultiBot:
         if avl_sz_buy_usd == 'updating' or avl_sz_sell_usd == 'updating':
             return False
         max_deal_size_usd = min(avl_sz_buy_usd, avl_sz_sell_usd, self.max_order_size_usd)
+        if max_deal_size_usd < self.min_size:
+            return False
         if not self.check_min_size(buy_ex, buy_mrkt, max_deal_size_usd, price):
             return False
         if not self.check_min_size(sell_ex, sell_mrkt, max_deal_size_usd, price):

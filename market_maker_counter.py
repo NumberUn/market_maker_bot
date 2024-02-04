@@ -17,6 +17,7 @@ class MarketFinder:
         self.profit_open = self.multibot.profit_open
         self.profit_close = self.multibot.profit_close
         self.trade_mode = 'low'  # middle
+        self.min_size = self.multibot.min_size
 
     def get_active_deal(self, coin):
         if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
@@ -172,6 +173,8 @@ class MarketFinder:
                     # low_profit = (ob_sell['bids'][self.ob_level][0] - worst_px) / worst_px - fees
                     # print(f"{coin} BUY PROFIT RANGE: {round(top_profit, 6)} - {round(low_profit, 6)}")
                     if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_bid):
+                        if min(max_sz_usd, top_bid * ob_sell['bids'][self.ob_level][1]) < self.min_size:
+                            continue
                         best_px, worst_px, tick = self.get_range_buy_side(ob_buy, mrkt, top_bid, client_buy, active_px)
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         sz_coin = max_sz_usd / best_px
@@ -193,6 +196,8 @@ class MarketFinder:
                     # low_profit = (worst_px - ob_buy['asks'][self.ob_level][0]) / ob_buy['asks'][self.ob_level][0] - fees
                     # print(f"{coin} SELL PROFIT RANGE: {round(top_profit, 6)} - {round(low_profit, 6)}")
                     if max_sz_usd := self.multibot.if_tradable(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], top_ask):
+                        if min(max_sz_usd, top_ask * ob_buy['asks'][self.ob_level][1]) < self.min_size:
+                            continue
                         best_px, worst_px, tick = self.get_range_sell_side(ob_sell, mrkt, top_ask, client_sell, active_px)
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         sz_coin = max_sz_usd / best_px
