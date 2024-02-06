@@ -169,7 +169,7 @@ class MultiBot:
                      'old_order_size': old_order[1]['size']})
         task = ['amend_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 1000):
+        for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 # self.created_orders.update(resp['exchange_order_id'])
@@ -188,7 +188,7 @@ class MultiBot:
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
         mm_client.async_tasks.append(task)
-        for i in range(0, 1000):
+        for i in range(0, 200):
             if mm_client.cancel_responses.get(order_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.pop(coin + '-' + self.mm_exchange, '')
@@ -197,7 +197,7 @@ class MultiBot:
                 return
             await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
-        print(f"ALERT! MAKER ORDER WASN'T DELETED: {coin + '-' + self.mm_exchange} {order_id}")
+        # print(f"ALERT! MAKER ORDER WASN'T DELETED: {coin + '-' + self.mm_exchange} {order_id}")
         # if 'maker' in response[0].get('clOrderID', '') and self.EXCHANGE_NAME == self.multibot.mm_exchange:
         #     coin = symbol.split('PFC')[0]
         #     ord_id = coin + '-' + self.EXCHANGE_NAME
@@ -230,7 +230,7 @@ class MultiBot:
                      'size': size})
         task = ['create_order', deal]
         mm_client.async_tasks.append(task)
-        for i in range(0, 1000):
+        for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 # self.created_orders.update(resp['exchange_order_id'])
