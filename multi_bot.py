@@ -146,19 +146,19 @@ class MultiBot:
 
     @try_exc_async
     async def amend_maker_order(self, deal, coin, order_id):
-        old_order = self.open_orders.get(coin + '-' + self.mm_exchange)
+        market_id = coin + '-' + self.mm_exchange
+        old_order = self.open_orders.get(market_id)
         if not old_order or old_order[0] != order_id:
             if old_order:
                 print(f'AMEND MAKER ORDER WRONG ORDER_ID: {old_order}')
             await self.delete_maker_order(coin, order_id)
-            self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
             return
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = old_order[1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
         # if price == old_order[1]['price']:
-        #     self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        #     self.requests_in_progress.remove(market_id)
         #     return
         deal.update({'market': market,
                      'order_id': order_id,
@@ -173,9 +173,9 @@ class MultiBot:
             if resp := mm_client.responses.get(client_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 # self.created_orders.update(resp['exchange_order_id'])
-                self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
+                self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+                self.requests_in_progress.remove(market_id)
                 return
             await asyncio.sleep(0.001)
         await self.delete_maker_order(coin, order_id)
@@ -191,10 +191,10 @@ class MultiBot:
         market_id = coin + '-' + self.mm_exchange
         for i in range(0, 200):
             if mm_client.cancel_responses.get(order_id):
+                self.requests_in_progress.remove(market_id)
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
                 mm_client.cancel_responses.pop(order_id)
-                self.requests_in_progress.remove(market_id)
                 return
             await asyncio.sleep(0.001)
         self.requests_in_progress.remove(market_id)
@@ -219,6 +219,7 @@ class MultiBot:
 
     @try_exc_async
     async def new_maker_order(self, deal, coin):
+        market_id = coin + '-' + self.mm_exchange
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         rand_id = self.id_generator()
@@ -233,21 +234,23 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
-                self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
+                self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+                self.requests_in_progress.remove(market_id)
                 # await self.check_for_non_legit_orders()
                 return
             await asyncio.sleep(0.001)
-        self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        self.requests_in_progress.remove(market_id)
         # await self.check_for_non_legit_orders()
         # mm_client.cancel_all_orders(market)
         # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
-        deal_stored = self.open_orders.get(deal['coin'] + '-' + self.mm_exchange)
+        market_id = deal['coin'] + '-' + self.mm_exchange
+        self.requests_in_progress.append(market_id)
+        deal_stored = self.open_orders.get(market_id)
         side = 'buy' if deal['side'] == 'sell' else 'sell'
         best_market = None
         best_price = None
@@ -289,14 +292,15 @@ class MultiBot:
         await asyncio.sleep(0.1)
         if resp := best_client.responses.get(client_id):
             if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
-                deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
+                deal_stored = self.dump_orders.get(market_id)
             print(f"STORED DEAL: {deal_stored}")
             best_client.responses.pop(client_id)
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
             self.create_and_send_deal_report_message(results)
+            self.requests_in_progress.remove(market_id)
             return
-
         # best_client.cancel_all_orders(best_market)
+        self.requests_in_progress.remove(market_id)
         self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
