@@ -79,7 +79,7 @@ class MultiBot:
         self._loop = asyncio.new_event_loop()
         self.rabbit = Rabbit(self._loop)
         self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
-        # self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
+        self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
         self.requests_in_progress = []
         self.created_orders = set()
@@ -188,15 +188,16 @@ class MultiBot:
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
         mm_client.async_tasks.append(task)
+        market_id = coin + '-' + self.mm_exchange
         for i in range(0, 200):
             if mm_client.cancel_responses.get(order_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
-                self.open_orders.pop(coin + '-' + self.mm_exchange, '')
+                self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
                 mm_client.cancel_responses.pop(order_id)
-                self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+                self.requests_in_progress.remove(market_id)
                 return
             await asyncio.sleep(0.001)
-        self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        self.requests_in_progress.remove(market_id)
         # print(f"ALERT! MAKER ORDER WASN'T DELETED: {coin + '-' + self.mm_exchange} {order_id}")
         # if 'maker' in response[0].get('clOrderID', '') and self.EXCHANGE_NAME == self.multibot.mm_exchange:
         #     coin = symbol.split('PFC')[0]
@@ -287,8 +288,8 @@ class MultiBot:
                                                          'client_id': client_id}])
         await asyncio.sleep(0.1)
         if resp := best_client.responses.get(client_id):
-            # if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
-            #     deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
+            if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
+                deal_stored = self.dump_orders.get(deal['coin'] + '-' + self.mm_exchange)
             print(f"STORED DEAL: {deal_stored}")
             best_client.responses.pop(client_id)
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
