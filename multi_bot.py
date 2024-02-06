@@ -33,7 +33,8 @@ class MultiBot:
                  'launch_fields', 'setts', 'rates_file_name', 'markets', 'clients_markets_data', 'finder',
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
-                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size']
+                 'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size',
+                 'created_orders', 'deleted_orders']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -81,6 +82,8 @@ class MultiBot:
         # self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
         self.requests_in_progress = []
+        self.created_orders = set()
+        self.deleted_orders = set()
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -122,6 +125,18 @@ class MultiBot:
             client.market_finder = finder
             client.run_updater()
 
+    @try_exc_async
+    async def check_for_non_legit_orders(self):
+        all_canceled_orders = self.deleted_orders.copy()
+        open_orders_set = {x[0] for x in self.open_orders.values()}
+        all_canceled_orders.update(open_orders_set)
+        if all_canceled_orders != self.created_orders:
+            print(f"ALERT: NON LEGIT ORDERS: {self.created_orders - all_canceled_orders}")
+            all_open_orders = self.clients_with_names[self.mm_exchange].get_all_orders()
+            for order in all_open_orders:
+                if order['orderID'] in self.created_orders - all_canceled_orders:
+                    print(order)
+
     @staticmethod
     @try_exc_regular
     def run_await_in_thread(func, loop):
@@ -155,6 +170,7 @@ class MultiBot:
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
+                self.created_orders.update(resp['exchange_order_id'])
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
@@ -167,6 +183,7 @@ class MultiBot:
 
     @try_exc_async
     async def delete_maker_order(self, coin, order_id):
+        self.deleted_orders.update(order_id)
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         task = ['cancel_order', {'market': market, 'order_id': order_id}]
@@ -201,12 +218,15 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
+                self.created_orders.update(resp['exchange_order_id'])
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+                await self.check_for_non_legit_orders()
                 return
             await asyncio.sleep(0.001)
         self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        await self.check_for_non_legit_orders()
         # mm_client.cancel_all_orders(market)
         # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
 
