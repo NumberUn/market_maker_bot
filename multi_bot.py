@@ -127,10 +127,12 @@ class MultiBot:
 
     @try_exc_async
     async def check_for_non_legit_orders(self):
+        time_start = time.time()
         all_canceled_orders = self.deleted_orders.copy()
         open_orders_set = {x[0] for x in self.open_orders.values()}
         all_canceled_orders.update(open_orders_set)
         if non_legit := all_canceled_orders - self.created_orders:
+            print(f'CHECKING ORDERS TIME: {time.time() - time_start} sec')
             print(f"ALERT: NON LEGIT ORDERS: {non_legit}")
             all_open_orders = self.clients_with_names[self.mm_exchange].get_all_orders()
             for order in all_open_orders:
@@ -218,8 +220,8 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 1000):
             if resp := mm_client.responses.get(client_id):
-                self.created_orders.update(resp['exchange_order_id'])
                 self.open_orders.update({coin + '-' + self.mm_exchange: [resp['exchange_order_id'], deal]})
+                self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
                 await self.check_for_non_legit_orders()
