@@ -130,11 +130,11 @@ class MultiBot:
         all_canceled_orders = self.deleted_orders.copy()
         open_orders_set = {x[0] for x in self.open_orders.values()}
         all_canceled_orders.update(open_orders_set)
-        if all_canceled_orders != self.created_orders:
-            print(f"ALERT: NON LEGIT ORDERS: {self.created_orders - all_canceled_orders}")
+        if non_legit := all_canceled_orders - self.created_orders:
+            print(f"ALERT: NON LEGIT ORDERS: {non_legit}")
             all_open_orders = self.clients_with_names[self.mm_exchange].get_all_orders()
             for order in all_open_orders:
-                if order['orderID'] in self.created_orders - all_canceled_orders:
+                if order['orderID'] in non_legit:
                     print(order)
 
     @staticmethod
