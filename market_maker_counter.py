@@ -253,7 +253,10 @@ class MarketFinder:
                          'profit': profit, 'range': [round(sell_low, 8), round(sell_top, 8)], 'target': buy_price,
                          'direction': sell_deals[0]['direction'], 'tick': sell_deals[0]['tick']}
         if sell_deal and buy_deal:
-            top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
+            if active_deal:
+                top_deal = sell_deal if active_deal[1]['side'] == 'sell' else buy_deal
+            else:
+                top_deal = sell_deal if sell_deal['profit'] > buy_deal['profit'] else buy_deal
         elif sell_deal and not buy_deal:
             top_deal = sell_deal
         elif buy_deal and not sell_deal:
@@ -271,10 +274,19 @@ class MarketFinder:
             if top_deal:
                 if top_deal['side'] == active_deal[1]['side']:
                     tick = top_deal['tick']
-                    if active_deal[1]['size'] <= top_deal['size']:
-                        if top_deal['range'][0] - tick < active_deal[1]['price'] < top_deal['range'][1] + tick:
+                    if top_deal['range'][0] - tick < active_deal[1]['price'] < top_deal['range'][1] + tick:
+                        if active_deal[1]['size'] <= top_deal['size']:
+                            if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                                # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
+                                return
                             self.multibot.open_orders[coin + '-' + self.multibot.mm_exchange][1].update(
                                 {'last_update': now_ts})
+                        else:
+                            if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                                # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
+                                return
+                            self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                            self.amend_order(top_deal, coin, active_deal[0])
                         # print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     else:
                         if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
