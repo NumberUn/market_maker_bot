@@ -275,7 +275,7 @@ class MarketFinder:
                         if top_deal['range'][0] - tick < active_deal[1]['price'] < top_deal['range'][1] + tick:
                             self.multibot.open_orders[coin + '-' + self.multibot.mm_exchange][1].update(
                                 {'last_update': now_ts})
-                        print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
+                        # print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     else:
                         if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
                             # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
