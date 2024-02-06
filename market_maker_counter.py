@@ -270,61 +270,61 @@ class MarketFinder:
     @try_exc_regular
     def process_parse_results(self, sell_deals, buy_deals, coin, active_deal, now_ts):
         top_deal, buy_deal, sell_deal = self.get_top_deal(sell_deals, buy_deals, coin, active_deal, now_ts)
+        market_id = coin + '-' + self.multibot.mm_exchange
         if active_deal:
             if top_deal:
                 if top_deal['side'] == active_deal[1]['side']:
                     tick = top_deal['tick']
                     if top_deal['range'][0] - tick < active_deal[1]['price'] < top_deal['range'][1] + tick:
                         if active_deal[1]['size'] <= top_deal['size']:
-                            if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                            if self.multibot.requests_in_progress.get(market_id):
                                 # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                                 return
-                            self.multibot.open_orders[coin + '-' + self.multibot.mm_exchange][1].update(
-                                {'last_update': now_ts})
+                            self.multibot.open_orders[market_id][1].update({'last_update': now_ts})
+                            # print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                         else:
-                            if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                            if self.multibot.requests_in_progress.get(market_id):
                                 # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                                 return
-                            self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                            self.multibot.requests_in_progress.update({market_id: True})
                             self.amend_order(top_deal, coin, active_deal[0])
-                        # print(f"ORDER {coin} {active_deal[1]['side']} STILL GOOD. PRICE: {active_deal[1]['price']}\n")
                     else:
-                        if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                        if self.multibot.requests_in_progress.get(market_id):
                             # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                             return
-                        self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                        self.multibot.requests_in_progress.update({market_id: True})
                         self.amend_order(top_deal, coin, active_deal[0])
                         # print(f"AMEND\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
                 else:
-                    if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                    if self.multibot.requests_in_progress.get(market_id):
                         #     # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                         return
-                    self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                    self.multibot.requests_in_progress.update({market_id: True})
                     self.delete_order(coin, active_deal[0])
                 # else:
-                #     if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                #     if self.multibot.requests_in_progress.get(market_id):
                 #         # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                 #         return
-                #     self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                #     self.multibot.requests_in_progress.update({market_id: True})
                 #     self.delete_order(coin, active_deal[0])
-                #     while coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                #     while self.multibot.requests_in_progress.get(market_id):
                 #         # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                 #         time.sleep(0.001)
                 #     self.new_order(top_deal, coin)
                 #     # print(f"CHANGE SIDE\nOLD: {active_deal[1]}\nNEW: {top_deal}\n")
             else:
-                if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                if self.multibot.requests_in_progress.get(market_id):
                 #     # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                     return
-                self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                self.multibot.requests_in_progress.update({market_id: True})
                 self.delete_order(coin, active_deal[0])
                 # print(f"DELETE\nORDER: {active_deal}")
         else:
             if top_deal:
-                if coin + '-' + self.multibot.mm_exchange in self.multibot.requests_in_progress:
+                if self.multibot.requests_in_progress.get(market_id):
                     # print(f"{coin} REQUEST IS IN PROGRESS. BREAK")
                     return
-                self.multibot.requests_in_progress.append(coin + '-' + self.multibot.mm_exchange)
+                self.multibot.requests_in_progress.update({market_id: True})
                 self.new_order(top_deal, coin)
                 # print(f"CREATE NEW ORDER {coin} {top_deal}\n")
 

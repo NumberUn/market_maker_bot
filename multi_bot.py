@@ -81,7 +81,7 @@ class MultiBot:
         self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.run_sub_processes()
-        self.requests_in_progress = []
+        self.requests_in_progress = dict()
         self.created_orders = set()
         self.deleted_orders = set()
 
@@ -158,7 +158,7 @@ class MultiBot:
         client_id = old_order[1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
         # if price == old_order[1]['price']:
-        #     self.requests_in_progress.remove(market_id)
+        #     self.requests_in_progress.update({market_id: False})
         #     return
         deal.update({'market': market,
                      'order_id': order_id,
@@ -175,7 +175,7 @@ class MultiBot:
                 # self.created_orders.update(resp['exchange_order_id'])
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.remove(market_id)
+                self.requests_in_progress.update({market_id: False})
                 return
             await asyncio.sleep(0.001)
         await self.delete_maker_order(coin, order_id)
@@ -191,20 +191,20 @@ class MultiBot:
         market_id = coin + '-' + self.mm_exchange
         for i in range(0, 200):
             if mm_client.cancel_responses.get(order_id):
-                self.requests_in_progress.remove(market_id)
+                self.requests_in_progress.update({market_id: False})
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
                 mm_client.cancel_responses.pop(order_id)
                 return
             await asyncio.sleep(0.001)
-        self.requests_in_progress.remove(market_id)
+        self.requests_in_progress.update({market_id: False})
         # print(f"ALERT! MAKER ORDER WASN'T DELETED: {coin + '-' + self.mm_exchange} {order_id}")
         # if 'maker' in response[0].get('clOrderID', '') and self.EXCHANGE_NAME == self.multibot.mm_exchange:
         #     coin = symbol.split('PFC')[0]
         #     ord_id = coin + '-' + self.EXCHANGE_NAME
         #     self.multibot.open_orders.pop(ord_id)
         # await asyncio.sleep(0.01)
-        # self.requests_in_progress.remove(coin + '-' + self.mm_exchange)
+        # self.requests_in_progress.update({market_id: False})
 
     @try_exc_regular
     def precise_size(self, coin, size):
@@ -237,11 +237,11 @@ class MultiBot:
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.remove(market_id)
+                self.requests_in_progress.update({market_id: False})
                 # await self.check_for_non_legit_orders()
                 return
             await asyncio.sleep(0.001)
-        self.requests_in_progress.remove(market_id)
+        self.requests_in_progress.update({market_id: False})
         # await self.check_for_non_legit_orders()
         # mm_client.cancel_all_orders(market)
         # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
@@ -249,7 +249,7 @@ class MultiBot:
     @try_exc_async
     async def hedge_maker_position(self, deal):
         market_id = deal['coin'] + '-' + self.mm_exchange
-        self.requests_in_progress.append(market_id)
+        self.requests_in_progress.update({market_id: True})
         deal_stored = self.open_orders.get(market_id)
         side = 'buy' if deal['side'] == 'sell' else 'sell'
         best_market = None
@@ -297,10 +297,10 @@ class MultiBot:
             best_client.responses.pop(client_id)
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
             self.create_and_send_deal_report_message(results)
-            self.requests_in_progress.remove(market_id)
+            self.requests_in_progress.update({market_id: False})
             return
         # best_client.cancel_all_orders(best_market)
-        self.requests_in_progress.remove(market_id)
+        self.requests_in_progress.update({market_id: False})
         self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
