@@ -235,8 +235,8 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
+                print(f"CREATE: {self.open_orders.get(market_id, '')[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                print(f"AMEND: {self.open_orders.get(market_id, '')[0]} -> {resp['exchange_order_id']}")
                 # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.update({market_id: False})
