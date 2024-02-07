@@ -291,7 +291,7 @@ class MultiBot:
                                                          'side': side,
                                                          'market': best_market,
                                                          'client_id': client_id}])
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.02)
         if resp := best_client.responses.get(client_id):
             if not deal_stored:
                 deal_stored = self.dump_orders.get(market_id)
@@ -341,6 +341,7 @@ class MultiBot:
         direction = deal_stored[1]['direction'] if deal_stored else 'guess'
         results.update({'direction': direction,
                         'coin': maker_deal['coin'],
+                        'maker fill type': maker_deal['type'],
                         'order id stored': deal_stored[0] if deal_stored else deal_stored,
                         'order id filled': maker_deal['order_id'],
                         'last order update to fill': round(maker_deal['ts_ms'] - last_upd, 5),
