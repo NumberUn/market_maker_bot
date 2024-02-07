@@ -171,7 +171,7 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
-                print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
+                # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
                 # self.created_orders.update(resp['exchange_order_id'])
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
@@ -192,7 +192,7 @@ class MultiBot:
         for i in range(0, 200):
             if mm_client.cancel_responses.get(order_id):
                 self.requests_in_progress.update({market_id: False})
-                print(f"DELETE: {order_id}")
+                # print(f"DELETE: {order_id}")
                 # self.open_orders.pop(market_id, '')
                 self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
                 mm_client.cancel_responses.pop(order_id, '')
@@ -235,7 +235,7 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
-                print(f"CREATE: {self.open_orders.get(market_id, [''])[0]} -> {resp['exchange_order_id']}")
+                # print(f"CREATE: {self.open_orders.get(market_id, [''])[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
