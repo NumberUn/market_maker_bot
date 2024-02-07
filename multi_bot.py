@@ -193,9 +193,9 @@ class MultiBot:
             if mm_client.cancel_responses.get(order_id):
                 self.requests_in_progress.update({market_id: False})
                 print(f"DELETE: {order_id}")
-                self.open_orders.pop(market_id, '')
-                # self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
-                mm_client.cancel_responses.pop(order_id)
+                # self.open_orders.pop(market_id, '')
+                self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
+                mm_client.cancel_responses.pop(order_id, '')
                 return
             await asyncio.sleep(0.001)
         self.requests_in_progress.update({market_id: False})
@@ -236,7 +236,7 @@ class MultiBot:
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                print(f"AMEND: {self.open_orders.get(market_id, '')} -> {resp['exchange_order_id']}")
+                print(f"AMEND: {self.open_orders.get(market_id, '')[0]} -> {resp['exchange_order_id']}")
                 # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.update({market_id: False})
@@ -293,8 +293,8 @@ class MultiBot:
                                                          'client_id': client_id}])
         await asyncio.sleep(0.1)
         if resp := best_client.responses.get(client_id):
-            # if not deal_stored or deal_stored[0] != resp['exchange_order_id']:
-            #     deal_stored = self.dump_orders.get(market_id)
+            if not deal_stored:
+                deal_stored = self.dump_orders.get(market_id)
             print(f"STORED DEAL: {deal_stored}")
             best_client.responses.pop(client_id)
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
