@@ -250,14 +250,14 @@ class MultiBot:
 
     @try_exc_async
     async def hedge_maker_position(self, deal):
-        market_id = deal['coin'] + '-' + self.mm_exchange
-        self.requests_in_progress.update({market_id: True})
-        deal_stored = self.open_orders.get(market_id)
-        dump_deal_stored = self.dump_orders.get(market_id)
+        mrkt_id = deal['coin'] + '-' + self.mm_exchange
+        self.requests_in_progress.update({mrkt_id: True})
+        deal_mem = self.open_orders.get(mrkt_id)
+        dump_deal_mem = self.dump_orders.get(mrkt_id)
         side = 'buy' if deal['side'] == 'sell' else 'sell'
         best_market = None
         best_price = None
-        best_client = None
+        top_clnt = None
         best_ob = None
         for client in self.clients:
             if self.mm_exchange == client.EXCHANGE_NAME:
@@ -271,40 +271,46 @@ class MultiBot:
                         if best_price > price:
                             best_price = price * 1.01
                             best_market = market
-                            best_client = client
+                            top_clnt = client
                             best_ob = ob
                     else:
                         if best_price < price:
                             best_price = price * 0.99
                             best_market = market
-                            best_client = client
+                            top_clnt = client
                             best_ob = ob
                 else:
                     best_price = price * 1.01 if side == 'buy' else price * 0.99
                     best_market = market
-                    best_client = client
+                    top_clnt = client
                     best_ob = ob
         rand_id = self.id_generator()
-        client_id = f'takerxxx{best_client.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
-        price, size = best_client.fit_sizes(best_price, deal['size'], best_market)
-        best_client.async_tasks.append(['create_order', {'price': price,
+        client_id = f'takerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
+        price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
+        top_clnt.async_tasks.append(['create_order', {'price': price,
                                                          'size': size,
                                                          'side': side,
                                                          'market': best_market,
-                                                         'client_id': client_id}])
+                                                         'client_id': client_id,
+                                                         'hedge': True}])
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id))
+
+    @try_exc_async
+    async def get_resp_report_deal(self, top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id):
         await asyncio.sleep(0.02)
-        if resp := best_client.responses.get(client_id):
-            if not deal_stored:
-                deal_stored = dump_deal_stored
-            print(f"STORED DEAL: {deal_stored}")
-            print(f"DUMP DEAL: {dump_deal_stored}")
-            best_client.responses.pop(client_id)
-            results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
+        self.requests_in_progress.update({mrkt_id: False})
+        await asyncio.sleep(0.2)
+        if resp := top_clnt.responses.get(client_id):
+            if not deal_mem:
+                deal_mem = dump_deal_mem
+            print(f"STORED DEAL: {deal_mem}")
+            print(f"DUMP DEAL: {dump_deal_mem}")
+            top_clnt.responses.pop(client_id)
+            results = self.sort_deal_response_data(deal, resp, best_ob, deal_mem)
             self.create_and_send_deal_report_message(results)
-            self.requests_in_progress.update({market_id: False})
             return
-        # best_client.cancel_all_orders(best_market)
-        self.requests_in_progress.update({market_id: False})
+        # top_clnt.cancel_all_orders(best_market)
         self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
     @try_exc_regular
@@ -336,15 +342,15 @@ class MultiBot:
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
-    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict, deal_stored) -> dict:
+    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict, deal_mem) -> dict:
         results = dict()
-        last_upd = deal_stored[1]['last_update'] if deal_stored else 0
-        target_price = deal_stored[1]['target'] if deal_stored else None
-        direction = deal_stored[1]['direction'] if deal_stored else 'guess'
+        last_upd = deal_mem[1]['last_update'] if deal_mem else 0
+        target_price = deal_mem[1]['target'] if deal_mem else None
+        direction = deal_mem[1]['direction'] if deal_mem else 'guess'
         results.update({'direction': direction,
                         'coin': maker_deal['coin'],
                         'maker fill type': maker_deal['type'],
-                        'order id stored': deal_stored[0] if deal_stored else deal_stored,
+                        'order id stored': deal_mem[0] if deal_mem else deal_mem,
                         'order id filled': maker_deal['order_id'],
                         'last order update to fill': round(maker_deal['ts_ms'] - last_upd, 5),
                         'taker order ping': round(taker_deal['create_order_time'], 5),
