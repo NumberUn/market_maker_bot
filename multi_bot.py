@@ -253,6 +253,7 @@ class MultiBot:
         market_id = deal['coin'] + '-' + self.mm_exchange
         self.requests_in_progress.update({market_id: True})
         deal_stored = self.open_orders.get(market_id)
+        dump_deal_stored = self.dump_orders.get(market_id)
         side = 'buy' if deal['side'] == 'sell' else 'sell'
         best_market = None
         best_price = None
@@ -294,8 +295,9 @@ class MultiBot:
         await asyncio.sleep(0.02)
         if resp := best_client.responses.get(client_id):
             if not deal_stored:
-                deal_stored = self.dump_orders.get(market_id)
+                deal_stored = dump_deal_stored
             print(f"STORED DEAL: {deal_stored}")
+            print(f"DUMP DEAL: {dump_deal_stored}")
             best_client.responses.pop(client_id)
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_stored)
             self.create_and_send_deal_report_message(results)
