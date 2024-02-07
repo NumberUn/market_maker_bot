@@ -148,11 +148,11 @@ class MultiBot:
     async def amend_maker_order(self, deal, coin, order_id):
         market_id = coin + '-' + self.mm_exchange
         old_order = self.open_orders.get(market_id)
-        if not old_order or old_order[0] != order_id:
-            if old_order:
-                print(f'AMEND MAKER ORDER WRONG ORDER_ID: {old_order}')
-            await self.delete_maker_order(coin, order_id)
-            return
+        # if not old_order:  # or old_order[0] != order_id:
+        #     if old_order:
+        #         print(f'AMEND MAKER ORDER WRONG ORDER_ID: {old_order}')
+        #     await self.delete_maker_order(coin, order_id)
+        #     return
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = old_order[1]['client_id']
@@ -235,7 +235,7 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
-                print(f"CREATE: {self.open_orders.get(market_id, '')[0]} -> {resp['exchange_order_id']}")
+                print(f"CREATE: {self.open_orders.get(market_id, [''])[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
