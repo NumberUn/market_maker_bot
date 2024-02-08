@@ -173,7 +173,8 @@ class ArbitrageFinder:
                                 'ex_buy': ex_buy,
                                 'ex_sell': ex_sell,
                                 'coin': coin,
-                                'profit': profit}
+                                'profit': profit,
+                                'direction': direction}
                         await run_arbitrage(deal)
 
                         # loop = asyncio.get_event_loop()

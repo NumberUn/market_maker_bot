@@ -129,7 +129,7 @@ class MultiBot:
         if self.arbitrage_processing:
             return
         self.arbitrage_processing = True
-        unprecised_sz = min([size * deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
+        unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
@@ -140,7 +140,7 @@ class MultiBot:
         ts_send = time.time()
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         deal['client_sell'].async_tasks.append(['create_order', sell_deal])
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(1)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
@@ -155,6 +155,9 @@ class MultiBot:
             resp_sell = deal['client_sell'].responses.get(client_id)
             deal['client_sell'].responses.pop(client_id)
         message = f"TAKER DEAL EXECUTED | {deal['coin']}\n"
+        message += f"DEAL DIRECTION: {deal['direction']}\n"
+        message += f"BUY EXCHANGE: {deal['ex_buy']}\n"
+        message += f"SELL EXCHANGE: {deal['ex_sell']}\n"
         message += f"TARGET BUY PRICE: {deal['buy_px']}\n"
         message += f"TARGET SELL PRICE: {deal['sell_px']}\n"
         message += f"TARGET SIZE: {precised_sz}\n"
