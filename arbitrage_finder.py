@@ -83,22 +83,24 @@ class ArbitrageFinder:
         self.excepts = targets
 
     @try_exc_regular
-    def check_timestamps(self, ob_buy, ob_sell, now_ts):
-        buy_own_ts_ping = now_ts - ob_buy['ts_ms']
-        sell_own_ts_ping = now_ts - ob_sell['ts_ms']
+    def check_timestamps(self, client_buy, client_sell, ob_buy, ob_sell):
+        # buy_own_ts_ping = now_ts - ob_buy['ts_ms']
+        # sell_own_ts_ping = now_ts - ob_sell['ts_ms']
         if isinstance(ob_buy['timestamp'], float):
-            ts_buy = now_ts - ob_buy['timestamp']
+            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp']
         else:
-            ts_buy = now_ts - ob_buy['timestamp'] / 1000
+            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp'] / 1000
         if isinstance(ob_sell['timestamp'], float):
-            ts_sell = now_ts - ob_sell['timestamp']
+            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp']
         else:
-            ts_sell = now_ts - ob_sell['timestamp'] / 1000
-        is_buy_ping_faster = ts_sell - sell_own_ts_ping > ts_buy - buy_own_ts_ping
-        is_buy_last_ob_update = sell_own_ts_ping > buy_own_ts_ping
-        if is_buy_ping_faster == is_buy_last_ob_update:
-            return True
-        return False
+            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp'] / 1000
+        if ts_sell > client_sell.top_ws_ping or ts_buy > client_buy.top_ws_ping:
+            return False
+        return True
+
+        # is_buy_ping_faster = ts_sell - sell_own_ts_ping > ts_buy - buy_own_ts_ping
+        # is_buy_last_ob_update = sell_own_ts_ping > buy_own_ts_ping
+        # if is_buy_ping_faster == is_buy_last_ob_update:
 
     @try_exc_async
     async def count_one_coin(self, coin, trigger_exchange, trigger_side, run_arbitrage):
@@ -125,6 +127,8 @@ class ArbitrageFinder:
                     if not ob_buy.get('bids') or not ob_buy.get('asks'):
                         continue
                     if not ob_sell.get('bids') or not ob_sell.get('asks'):
+                        continue
+                    if not self.check_timestamps(client_buy, client_sell, ob_buy, ob_sell):
                         continue
                     buy_px = ob_buy['asks'][0][0]
                     buy_sz = ob_buy['asks'][0][1]
