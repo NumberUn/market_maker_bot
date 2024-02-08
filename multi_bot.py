@@ -131,6 +131,8 @@ class MultiBot:
         self.arbitrage_processing = True
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
+        if precised_sz == 0:
+            return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
@@ -140,7 +142,7 @@ class MultiBot:
         ts_send = time.time()
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         deal['client_sell'].async_tasks.append(['create_order', sell_deal])
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.2)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
@@ -504,7 +506,7 @@ class MultiBot:
             return False
         if not self.check_min_size(sell_ex, sell_mrkt, max_deal_size_usd, price):
             return False
-        return max_deal_size_usd
+        return int(max_deal_size_usd)
 
     @try_exc_regular
     def fit_sz_and_px_maker(self, size, client, price, coin):
