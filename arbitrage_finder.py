@@ -154,13 +154,13 @@ class ArbitrageFinder:
                         print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
                         print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
                         if isinstance(ob_buy['timestamp'], float):
-                            ts_buy = now_ts - ob_buy['timestamp']
+                            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp']
                         else:
-                            ts_buy = now_ts - ob_buy['timestamp'] / 1000
+                            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp'] / 1000
                         if isinstance(ob_sell['timestamp'], float):
-                            ts_sell = now_ts - ob_sell['timestamp']
+                            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp']
                         else:
-                            ts_sell = now_ts - ob_sell['timestamp'] / 1000
+                            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp'] / 1000
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
                                 'buy_px': buy_px,
