@@ -155,10 +155,10 @@ class MultiBot:
             resp_sell = deal['client_sell'].responses.get(client_id)
             deal['client_sell'].responses.pop(client_id)
         message = f"TAKER DEAL EXECUTED | {deal['coin']}\n"
-        message += f"TARGET BUY PRICE: {deal['buy_x']}\n"
-        message += f"TARGET SELL PRICE: {deal['sell_x']}\n"
+        message += f"TARGET BUY PRICE: {deal['buy_px']}\n"
+        message += f"TARGET SELL PRICE: {deal['sell_px']}\n"
         message += f"TARGET SIZE: {precised_sz}\n"
-        message += f"TARGET SIZE, USD: {round(precised_sz * deal['buy_price'], 2)}\n"
+        message += f"TARGET SIZE, USD: {round(precised_sz * deal['buy_px'], 2)}\n"
         message += f"TARGET PROFIT: {deal['profit']}\n"
         message += f"REAL BUY PRICE: {resp_buy['price'] if resp_buy else None}\n"
         message += f"REAL SELL PRICE: {resp_sell['price'] if resp_sell else None}\n"
