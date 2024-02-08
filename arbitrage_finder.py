@@ -102,6 +102,7 @@ class ArbitrageFinder:
 
     @try_exc_async
     async def count_one_coin(self, coin, trigger_exchange, trigger_side, run_arbitrage):
+        now_ts = time.time()
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
                 continue
@@ -119,7 +120,6 @@ class ArbitrageFinder:
                 if sell_mrkt := client_sell.markets.get(coin):
                     ob_buy = client_buy.get_orderbook(buy_mrkt)
                     ob_sell = client_sell.get_orderbook(sell_mrkt)
-                    now_ts = time.time()
                     if not ob_buy or not ob_sell:
                         continue
                     if not ob_buy.get('bids') or not ob_buy.get('asks'):
@@ -127,7 +127,9 @@ class ArbitrageFinder:
                     if not ob_sell.get('bids') or not ob_sell.get('asks'):
                         continue
                     buy_px = ob_buy['asks'][0][0]
+                    buy_sz = ob_buy['asks'][0][1]
                     sell_px = ob_sell['bids'][0][0]
+                    sell_sz = ob_sell['bids'][0][1]
                     raw_profit = (sell_px - buy_px) / buy_px
                     name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     self.append_profit(profit=raw_profit, name=name)
@@ -147,12 +149,39 @@ class ArbitrageFinder:
                     if profit >= target_profit:
                         print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
                         print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
-                        loop = asyncio.get_event_loop()
-                        tasks = [loop.create_task(client_buy.get_orderbook_by_symbol(buy_mrkt)),
-                                 loop.create_task(client_sell.get_orderbook_by_symbol(sell_mrkt))]
-                        responses = asyncio.gather(*tasks, return_exceptions=True)
-                        for response in responses:
-                            print(response)
+                        if isinstance(ob_buy['timestamp'], float):
+                            ts_buy = now_ts - ob_buy['timestamp']
+                        else:
+                            ts_buy = now_ts - ob_buy['timestamp'] / 1000
+                        if isinstance(ob_sell['timestamp'], float):
+                            ts_sell = now_ts - ob_sell['timestamp']
+                        else:
+                            ts_sell = now_ts - ob_sell['timestamp'] / 1000
+                        deal = {'client_buy': client_buy,
+                                'client_sell': client_sell,
+                                'buy_px': buy_px,
+                                'sell_px': sell_px,
+                                'buy_sz': buy_sz,
+                                'sell_sz': sell_sz,
+                                'buy_mrkt': buy_mrkt,
+                                'sell_mrkt': sell_mrkt,
+                                'ts_start_counting': now_ts,
+                                'ob_buy_own_ts': ob_buy['ts_ms'],
+                                'ob_sell_own_ts': ob_sell['ts_ms'],
+                                'ob_buy_api_ts': ts_buy,
+                                'ob_sell_api_ts': ts_sell,
+                                'ex_buy': ex_buy,
+                                'ex_sell': ex_sell,
+                                'coin': coin,
+                                'profit': profit}
+                        await run_arbitrage(deal)
+
+                        # loop = asyncio.get_event_loop()
+                        # tasks = [loop.create_task(client_buy.get_orderbook_by_symbol(buy_mrkt)),
+                        #          loop.create_task(client_sell.get_orderbook_by_symbol(sell_mrkt))]
+                        # responses = asyncio.gather(*tasks, return_exceptions=True)
+                        # for response in responses:
+                        #     print(await response)
                         # buy_sz = ob_buy['asks'][0][1]
                         # sell_sz = ob_sell['bids'][0][1]
                         # deal_size_amount = min(buy_sz, sell_sz)
@@ -197,7 +226,6 @@ class ArbitrageFinder:
                         #     max_amount=sell_sz,
                         #     price=sell_px,
                         #     ts_ob=ob_sell['timestamp'])
-                        # await run_arbitrage(possibility)
 
     @staticmethod
     @try_exc_regular

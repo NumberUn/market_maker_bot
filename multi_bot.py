@@ -35,7 +35,7 @@ class MultiBot:
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
                  'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size',
-                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage']
+                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -87,6 +87,7 @@ class MultiBot:
         self.requests_in_progress = dict()
         self.created_orders = set()
         self.deleted_orders = set()
+        self.arbitrage_processing = False
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -121,8 +122,71 @@ class MultiBot:
             await self.rabbit.mq.close()
 
     @try_exc_async
-    async def run_arbitrage(self):
-        pass
+    async def run_arbitrage(self, deal):
+        size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
+        if not size:
+            return
+        if self.arbitrage_processing:
+            return
+        self.arbitrage_processing = True
+        unprecised_sz = min([size * deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
+        precised_sz = self.precise_size(deal['coin'], unprecised_sz)
+        rand_id = self.id_generator()
+        client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
+        buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
+                    'client_id': client_id, 'hedge': True}
+        sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
+                     'client_id': client_id, 'hedge': True}
+        ts_send = time.time()
+        deal['client_buy'].async_tasks.append(buy_deal)
+        deal['client_sell'].async_tasks.append(sell_deal)
+        await asyncio.sleep(0.2)
+        self.ap_deal_report(deal, client_id, precised_sz, ts_send)
+        self.arbitrage_processing = False
+
+    @try_exc_regular
+    def ap_deal_report(self, deal, client_id, precised_sz, ts_send):
+        resp_buy = None
+        resp_sell = None
+        if deal['client_buy'].responses.get(client_id):
+            resp_buy = deal['client_buy'].responses.get(client_id)
+            deal['client_buy'].responses.pop(client_id)
+        if deal['client_sell'].responses.get(client_id):
+            resp_sell = deal['client_sell'].responses.get(client_id)
+            deal['client_sell'].responses.pop(client_id)
+        message = f"TAKER DEAL EXECUTED | {deal['coin']}\n"
+        message += f"TARGET BUY PRICE: {deal['buy_x']}\n"
+        message += f"TARGET SELL PRICE: {deal['sell_x']}\n"
+        message += f"TARGET SIZE: {precised_sz}\n"
+        message += f"TARGET SIZE, USD: {round(precised_sz * deal['buy_price'], 2)}\n"
+        message += f"TARGET PROFIT: {deal['profit']}\n"
+        message += f"REAL BUY PRICE: {resp_buy['price'] if resp_buy else None}\n"
+        message += f"REAL SELL PRICE: {resp_sell['price'] if resp_sell else None}\n"
+        message += f"REAL BUY SIZE: {resp_buy['size'] if resp_buy else None}\n"
+        message += f"REAL SELL SIZE: {resp_sell['size'] if resp_sell else None}\n"
+        message += f"PING BUY ORDER: {round(resp_buy['create_order_time'], 5) if resp_buy else None}\n"
+        message += f"PING SELL ORDER: {round(resp_sell['create_order_time'], 5) if resp_sell else None}\n"
+        message += f"PING BUY OB OWN: {round(deal['ob_buy_own_ts'], 5)}\n"
+        message += f"PING SELL OB OWN: {round(deal['ob_sell_own_ts'], 5)}\n"
+        message += f"PING BUY OB API: {round(deal['ob_buy_api_ts'], 5)}\n"
+        message += f"PING SELL OB API : {round(deal['ob_sell_api_ts'], 5)}\n"
+        message += f"PING START COUNTING -> SEND: {round(ts_send - deal['ts_start_counting'], 5)}"
+        self.telegram.send_message(message, TG_Groups.MainGroup)
+        # result = {
+        #     'exchange_order_id': '',
+        #     'exchange_name': '',
+        #     'status': '',
+        #     'price': '',
+        #     'size': '',
+        #     'api_response': '',
+        #     'timestamp': '',
+        #     'create_order_time': ''}
+        #
+        # deal = {'ts_start_counting': '',
+        #         'ob_buy_own_ts': '',
+        #         'ob_sell_own_ts': '',
+        #         'ob_buy_api_ts': '',
+        #         'ob_sell_api_ts': ''}
 
     @try_exc_regular
     def run_sub_processes(self):
@@ -282,11 +346,11 @@ class MultiBot:
         client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
         price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
         top_clnt.async_tasks.append(['create_order', {'price': price,
-                                                         'size': size,
-                                                         'side': side,
-                                                         'market': best_market,
-                                                         'client_id': client_id,
-                                                         'hedge': True}])
+                                                      'size': size,
+                                                      'side': side,
+                                                      'market': best_market,
+                                                      'client_id': client_id,
+                                                      'hedge': True}])
         loop = asyncio.get_event_loop()
         loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id))
 
