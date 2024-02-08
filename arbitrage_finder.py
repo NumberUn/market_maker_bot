@@ -132,7 +132,7 @@ class ArbitrageFinder:
                     name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     self.append_profit(profit=raw_profit, name=name)
                     if raw_profit > 0:
-                        print(f"{name}|RAW profit: {raw_profit}")
+                        # print(f"{name}|RAW profit: {raw_profit}")
                     if self.state == 'Bot':
                         poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                         direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
@@ -151,7 +151,8 @@ class ArbitrageFinder:
                         tasks = [loop.create_task(client_buy.get_orderbook_by_symbol(buy_mrkt)),
                                  loop.create_task(client_sell.get_orderbook_by_symbol(sell_mrkt))]
                         responses = asyncio.gather(*tasks, return_exceptions=True)
-                        print(responses)
+                        for response in responses:
+                            print(response)
                         # buy_sz = ob_buy['asks'][0][1]
                         # sell_sz = ob_sell['bids'][0][1]
                         # deal_size_amount = min(buy_sz, sell_sz)
