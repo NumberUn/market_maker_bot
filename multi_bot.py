@@ -138,8 +138,8 @@ class MultiBot:
         sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
                      'client_id': client_id, 'hedge': True}
         ts_send = time.time()
-        deal['client_buy'].async_tasks.append(buy_deal)
-        deal['client_sell'].async_tasks.append(sell_deal)
+        deal['client_buy'].async_tasks.append(['create_order', buy_deal])
+        deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         await asyncio.sleep(0.2)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
