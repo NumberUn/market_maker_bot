@@ -8,6 +8,13 @@ import threading
 import json
 import traceback
 
+try:
+    with open('ranges.json', 'r') as f:
+        pass
+except:
+    with open('ranges.json', 'w') as f:
+        pass
+
 
 class ArbitrageFinder:
 
@@ -26,8 +33,8 @@ class ArbitrageFinder:
         self.profit_precise = 4
         self.profit_ranges = self.unpack_ranges()
         self.target_profits = self.get_all_target_profits()
-        # print(f"TARGET PROFIT RANGES FOR {(time.time() - self.profit_ranges['timestamp_start']) / 3600} HOURS")
-        # print(self.target_profits)
+        print(f"TARGET PROFIT RANGES FOR {(time.time() - self.profit_ranges['timestamp_start']) / 3600} HOURS")
+        print(self.target_profits)
 
     @try_exc_regular
     def get_target_profit(self, deal_direction):
@@ -53,8 +60,6 @@ class ArbitrageFinder:
             return 'open'
         else:
             return 'half_close'
-        # if deal_direction == 'half_close':
-        #     print(f"ALERT. WRONG DEAL DIRECTION: {positions[exchange_buy]=}\n{positions[exchange_sell]=}")
 
     def target_profit_exceptions(self, data):
         targets = dict()
@@ -76,6 +81,24 @@ class ArbitrageFinder:
                                 targets.update({sell_mrkt + buy_mrkt: target_profit,
                                                 buy_mrkt + sell_mrkt: target_profit})
         self.excepts = targets
+
+    @try_exc_regular
+    def check_timestamps(self, ob_buy, ob_sell, now_ts):
+        buy_own_ts_ping = now_ts - ob_buy['ts_ms']
+        sell_own_ts_ping = now_ts - ob_sell['ts_ms']
+        if isinstance(ob_buy['timestamp'], float):
+            ts_buy = now_ts - ob_buy['timestamp']
+        else:
+            ts_buy = now_ts - ob_buy['timestamp'] / 1000
+        if isinstance(ob_sell['timestamp'], float):
+            ts_sell = now_ts - ob_sell['timestamp']
+        else:
+            ts_sell = now_ts - ob_sell['timestamp'] / 1000
+        is_buy_ping_faster = ts_sell - sell_own_ts_ping > ts_buy - buy_own_ts_ping
+        is_buy_last_ob_update = sell_own_ts_ping > buy_own_ts_ping
+        if is_buy_ping_faster == is_buy_last_ob_update:
+            return True
+        return False
 
     @try_exc_async
     async def count_one_coin(self, coin, trigger_exchange, trigger_side, run_arbitrage):
@@ -100,126 +123,80 @@ class ArbitrageFinder:
                     if not ob_buy or not ob_sell:
                         continue
                     if not ob_buy.get('bids') or not ob_buy.get('asks'):
-                        # print(f"OB IS BROKEN {client_buy.EXCHANGE_NAME}: {ob_buy}")
                         continue
                     if not ob_sell.get('bids') or not ob_sell.get('asks'):
-                        # print(f"OB IS BROKEN {client_sell.EXCHANGE_NAME}: {ob_sell}")
                         continue
-                    buy_own_ts_ping = now_ts - ob_buy['ts_ms']
-                    sell_own_ts_ping = now_ts - ob_sell['ts_ms']
-
-                    if isinstance(ob_buy['timestamp'], float):
-                        ts_buy = now_ts - ob_buy['timestamp']
-                        # ts_buy_top = now_ts - ob_buy['top_ask_timestamp']
+                    buy_px = ob_buy['asks'][0][0]
+                    sell_px = ob_sell['bids'][0][0]
+                    raw_profit = (sell_px - buy_px) / buy_px
+                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                    self.append_profit(profit=raw_profit, name=name)
+                    if raw_profit > 0:
+                        print(f"{name}|RAW profit: {raw_profit}")
+                    if self.state == 'Bot':
+                        poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
+                        direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
                     else:
-                        ts_buy = now_ts - ob_buy['timestamp'] / 1000
-                        # ts_buy_top = now_ts - ob_buy['top_ask_timestamp'] / 1000
-                    if isinstance(ob_sell['timestamp'], float):
-                        ts_sell = now_ts - ob_sell['timestamp']
-                        # ts_sell_top = now_ts - ob_sell['top_bid_timestamp']
-                    else:
-                        ts_sell = now_ts - ob_sell['timestamp'] / 1000
-                        # ts_sell_top = now_ts - ob_sell['top_bid_timestamp'] / 1000
-                    if buy_own_ts_ping > 0.060 or sell_own_ts_ping > 0.060 or ts_sell > 0.3 or ts_buy > 0.3:
+                        direction = 'open'
+                    profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
+                    target_profit = self.target_profits.get(name, 'Not found')
+                    if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
                         continue
-
-                    # if ts_sell > 100 or ts_buy > 100:
-                    #     message = f"ORDERBOOK IS OLDER THAN 100s! TS NOW: {now_ts}\n"
-                    #     message += f"{client_buy.EXCHANGE_NAME} OB: {ob_buy}\n"
-                    #     message += f"{client_sell.EXCHANGE_NAME} OB: {ob_sell}\n"
-                    #     self.multibot.telegram.send_message(message, TG_Groups.Alerts)
-                    #     return
-                    # if coin == 'BTC':
-                    #     if buy_own_ts_ping > 0.010 or sell_own_ts_ping > 0.010:
-                    #         continue
-                    # else:
-
-                    # if client_buy.ob_push_limit and buy_own_ts_ping > client_buy.ob_push_limit:
-                    #     continue
-                    # elif client_sell.ob_push_limit and sell_own_ts_ping > client_sell.ob_push_limit:
-                    #     continue
-                    is_buy_ping_faster = ts_sell - sell_own_ts_ping > ts_buy - buy_own_ts_ping
-                    is_buy_last_ob_update = sell_own_ts_ping > buy_own_ts_ping
-                    if is_buy_ping_faster == is_buy_last_ob_update:
-                        buy_px = ob_buy['asks'][0][0]
-                        sell_px = ob_sell['bids'][0][0]
-                        raw_profit = (sell_px - buy_px) / buy_px
-                        # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                        # self.tradable_profits[coin].update({ex_buy+'__'+ex_sell: target_profit - profit,
-                        #                                     ex_sell+'__'+ex_buy: target_profit - profit})
-                        name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                        self.append_profit(profit=raw_profit, name=name)
-                        if raw_profit > 0:
-                            print(f"{name}|RAW profit: {raw_profit}")
-                        if self.state == 'Bot':
-                            poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
-                            direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
-                        else:
-                            direction = 'open'
-                        # target_profit = self.excepts.get(buy_mrkt + sell_mrkt, self.get_target_profit(direction))
-                        profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
-
-                        target_profit = self.target_profits.get(name, 'Not found')
-                        if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
-                            continue
-                        if target_profit == 'Not found':
-                            target_profit = self.get_target_profit(direction)
-                        if profit >= target_profit:
-                            print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
-                            buy_sz = ob_buy['asks'][0][1]
-                            sell_sz = ob_sell['bids'][0][1]
-                            # self.target_profits[name]:
-                            deal_size_amount = min(buy_sz, sell_sz)
-                            deal_size_usd_max = deal_size_amount * sell_px
-                            profit_usd_max = profit * deal_size_usd_max
-                            possibility = AP(ap_id=uuid.uuid4())
-                            possibility.start_processing = now_ts
-                            possibility.ob_buy = ob_buy
-                            possibility.ob_sell = ob_sell
-                            possibility.buy_max_amount_ob = buy_sz
-                            possibility.sell_max_amount_ob = sell_sz
-                            possibility.buy_price_target = buy_px
-                            possibility.sell_price_target = sell_px
-                            possibility.deal_max_amount_ob = deal_size_amount
-                            possibility.deal_max_usd_ob = deal_size_usd_max
-                            possibility.profit_rel_target = profit
-                            possibility.set_data_from_parser(
-                                coin=coin,
-                                target_profit=target_profit,
-                                deal_max_amount_parser=deal_size_amount,
-                                deal_max_usd_parser=deal_size_usd_max,
-                                expect_profit_rel=round(profit, 5),
-                                profit_usd_max=round(profit_usd_max, 3),
-                                datetime=datetime.utcnow(),
-                                timestamp=int(round(datetime.utcnow().timestamp() * 1000)),
-                                deal_direction=direction)
-                            possibility.set_side_data_from_parser(
-                                side='buy',
-                                client=client_buy,
-                                exchange=ex_buy,
-                                market=buy_mrkt,
-                                fee=self.fees[ex_buy],
-                                price=buy_px,
-                                max_amount=buy_sz,
-                                ts_ob=ob_buy['timestamp'])
-                            possibility.set_side_data_from_parser(
-                                side='sell',
-                                client=client_sell,
-                                exchange=ex_sell,
-                                market=sell_mrkt,
-                                fee=self.fees[ex_sell],
-                                max_amount=sell_sz,
-                                price=sell_px,
-                                ts_ob=ob_sell['timestamp'])
-                            # message = '\n'.join([x + ': ' + str(y) for x, y in possibility.items()])
-                            # with open('arbi.csv', 'a', newline='') as file:
-                            #     writer = csv.writer(file)
-                            #     writer.writerow([str(y) for y in possibility.values()])
-                            # print(f"AP filling time: {time.time() - time_start} sec")
-                            await run_arbitrage(possibility)
-                        # else:
-                        #     self.tradable_profits[coin].pop(ex_buy + '__' + ex_sell, None)
-                        #     self.tradable_profits[coin].pop(ex_sell + '__' + ex_buy, None)
+                    if target_profit == 'Not found':
+                        target_profit = self.get_target_profit(direction)
+                    if profit >= target_profit:
+                        print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
+                        print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
+                        loop = asyncio.get_event_loop()
+                        tasks = [loop.create_task(client_buy.get_orderbook_by_symbol(buy_mrkt)),
+                                 loop.create_task(client_sell.get_orderbook_by_symbol(sell_mrkt))]
+                        responses = asyncio.gather(*tasks, return_exceptions=True)
+                        print(responses)
+                        # buy_sz = ob_buy['asks'][0][1]
+                        # sell_sz = ob_sell['bids'][0][1]
+                        # deal_size_amount = min(buy_sz, sell_sz)
+                        # deal_size_usd_max = deal_size_amount * sell_px
+                        # profit_usd_max = profit * deal_size_usd_max
+                        # possibility = AP(ap_id=uuid.uuid4())
+                        # possibility.start_processing = now_ts
+                        # possibility.ob_buy = ob_buy
+                        # possibility.ob_sell = ob_sell
+                        # possibility.buy_max_amount_ob = buy_sz
+                        # possibility.sell_max_amount_ob = sell_sz
+                        # possibility.buy_price_target = buy_px
+                        # possibility.sell_price_target = sell_px
+                        # possibility.deal_max_amount_ob = deal_size_amount
+                        # possibility.deal_max_usd_ob = deal_size_usd_max
+                        # possibility.profit_rel_target = profit
+                        # possibility.set_data_from_parser(
+                        #     coin=coin,
+                        #     target_profit=target_profit,
+                        #     deal_max_amount_parser=deal_size_amount,
+                        #     deal_max_usd_parser=deal_size_usd_max,
+                        #     expect_profit_rel=round(profit, 5),
+                        #     profit_usd_max=round(profit_usd_max, 3),
+                        #     datetime=datetime.utcnow(),
+                        #     timestamp=int(round(datetime.utcnow().timestamp() * 1000)),
+                        #     deal_direction=direction)
+                        # possibility.set_side_data_from_parser(
+                        #     side='buy',
+                        #     client=client_buy,
+                        #     exchange=ex_buy,
+                        #     market=buy_mrkt,
+                        #     fee=self.fees[ex_buy],
+                        #     price=buy_px,
+                        #     max_amount=buy_sz,
+                        #     ts_ob=ob_buy['timestamp'])
+                        # possibility.set_side_data_from_parser(
+                        #     side='sell',
+                        #     client=client_sell,
+                        #     exchange=ex_sell,
+                        #     market=sell_mrkt,
+                        #     fee=self.fees[ex_sell],
+                        #     max_amount=sell_sz,
+                        #     price=sell_px,
+                        #     ts_ob=ob_sell['timestamp'])
+                        # await run_arbitrage(possibility)
 
     @staticmethod
     @try_exc_regular
@@ -254,12 +231,9 @@ class ArbitrageFinder:
             exchange_2 = direction_two['direction'].split(':')[1].split('|')[0]
             if exchange_1 not in (self.clients_with_names.keys()) or exchange_2 not in (self.clients_with_names.keys()):
                 continue
-            # fees = 0.00021 + 0.000375
-            # print(fees)
             sum_freq_1 = 0
             sum_freq_2 = 0
             fees = self.fees[exchange_1] + self.fees[exchange_2]
-            # print(fees)
             ### Choosing target profit as particular rate of frequency appearing in whole range of profits
             i = 0
             profit_1 = None
@@ -312,8 +286,7 @@ class ArbitrageFinder:
             with open('ranges.json', 'w') as file:
                 json.dump(self.profit_ranges, file)
             self.last_record = now
-        if now - self.profit_ranges['timestamp_start'] > 3600 * 24:
-            self.target_profits = self.get_all_target_profits()
+        if now - self.profit_ranges['timestamp_start'] > 3 * 3600 * 24:
             with open(f'ranges{str(datetime.now()).split(" ")[0]}.json', 'w') as file:
                 json.dump(self.profit_ranges, file)
             self.profit_ranges = {'timestamp': now, 'timestamp_start': now}
@@ -335,23 +308,9 @@ class ArbitrageFinder:
                                'range_len': range_len,  # sample total size of all records
                                'direction': direction}}  # direction in format B:{exch_buy}|S:{exch_sell}|C:{coin} (str)
             coins.update(upd_data)
-            # print(upd_data)
-            # print()
-
         return coins
 
 
 if __name__ == '__main__':
     pass
-    # from clients_markets_data import coins_symbols_client
-    # # from clients-http.kraken import KrakenClient
-    # # from clients-http.binance import BinanceClient
-    # # from clients-http.dydx import DydxClient
-    # # from clients-http.apollox import ApolloxClient
-    #
-    # clients_list = [DydxClient(), KrakenClient(), BinanceClient(), ApolloxClient()]  # , Bitfinex()]  # ,
-    # Bitspay(), Ascendex()]
-    # markets = coins_symbols_client(clients_list)  # {coin: {symbol:client(),...},...}
-    # finder = ArbitrageFinder([x for x in markets.keys()], clients_list)
-    # data = {}
-    # finder.arbitrage(data)
+

@@ -7,6 +7,7 @@ from datetime import datetime
 import math
 
 from market_maker_counter import MarketFinder
+from arbitrage_finder import ArbitrageFinder
 from clients.core.all_clients import ALL_CLIENTS
 from clients_markets_data import ClientsMarketData
 from core.database import DB
@@ -34,12 +35,14 @@ class MultiBot:
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
                  'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size',
-                 'created_orders', 'deleted_orders']
+                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
         self.db = None
         self.setts = config['SETTINGS']
+        self.market_maker = True if self.setts['MARKET_MAKER'] == '1' else False
+        self.arbitrage = True if self.setts['ARBITRAGE'] == '1' else False
         self.cycle_parser_delay = float(self.setts['CYCLE_PARSER_DELAY'])
         self.env = self.setts['ENV']
         self.trade_exceptions = {}
@@ -117,12 +120,22 @@ class MultiBot:
             await asyncio.sleep(5)
             await self.rabbit.mq.close()
 
+    @try_exc_async
+    async def run_arbitrage(self):
+        pass
+
     @try_exc_regular
     def run_sub_processes(self):
-        finder = MarketFinder(self.markets, self.clients_with_names, self)
+        mm_finder = None
+        ap_finder = None
+        if self.market_maker:
+            mm_finder = MarketFinder(self.markets, self.clients_with_names, self)
+        if self.arbitrage:
+            ap_finder = ArbitrageFinder(self.markets, self.clients_with_names, self.profit_open, self.profit_close)
         for client in self.clients:
             client.markets_list = list(self.markets.keys())
-            client.market_finder = finder
+            client.market_finder = mm_finder
+            client.finder = ap_finder
             client.run_updater()
 
     @try_exc_async
@@ -148,18 +161,10 @@ class MultiBot:
     async def amend_maker_order(self, deal, coin, order_id):
         market_id = coin + '-' + self.mm_exchange
         old_order = self.open_orders.get(market_id)
-        # if not old_order:  # or old_order[0] != order_id:
-        #     if old_order:
-        #         print(f'AMEND MAKER ORDER WRONG ORDER_ID: {old_order}')
-        #     await self.delete_maker_order(coin, order_id)
-        #     return
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
         client_id = old_order[1]['client_id']
         price, size = mm_client.fit_sizes(deal['price'], deal['size'], market)
-        # if price == old_order[1]['price']:
-        #     self.requests_in_progress.update({market_id: False})
-        #     return
         deal.update({'market': market,
                      'order_id': order_id,
                      'client_id': client_id,
@@ -172,7 +177,6 @@ class MultiBot:
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
-                # self.created_orders.update(resp['exchange_order_id'])
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.update({market_id: False})
@@ -200,12 +204,6 @@ class MultiBot:
             await asyncio.sleep(0.001)
         self.requests_in_progress.update({market_id: False})
         # print(f"ALERT! MAKER ORDER WASN'T DELETED: {coin + '-' + self.mm_exchange} {order_id}")
-        # if 'maker' in response[0].get('clOrderID', '') and self.EXCHANGE_NAME == self.multibot.mm_exchange:
-        #     coin = symbol.split('PFC')[0]
-        #     ord_id = coin + '-' + self.EXCHANGE_NAME
-        #     self.multibot.open_orders.pop(ord_id)
-        # await asyncio.sleep(0.01)
-        # self.requests_in_progress.update({market_id: False})
 
     @try_exc_regular
     def precise_size(self, coin, size):
@@ -237,15 +235,11 @@ class MultiBot:
             if resp := mm_client.responses.get(client_id):
                 # print(f"CREATE: {self.open_orders.get(market_id, [''])[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                # self.created_orders.update(resp['exchange_order_id'])
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.update({market_id: False})
-                # await self.check_for_non_legit_orders()
                 return
             await asyncio.sleep(0.001)
         self.requests_in_progress.update({market_id: False})
-        # await self.check_for_non_legit_orders()
-        # mm_client.cancel_all_orders(market)
         # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
 
     @try_exc_async
@@ -285,7 +279,7 @@ class MultiBot:
                     top_clnt = client
                     best_ob = ob
         rand_id = self.id_generator()
-        client_id = f'takerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
+        client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
         price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
         top_clnt.async_tasks.append(['create_order', {'price': price,
                                                          'size': size,
@@ -310,32 +304,29 @@ class MultiBot:
             results = self.sort_deal_response_data(deal, resp, best_ob, deal_mem)
             self.create_and_send_deal_report_message(results)
             return
-        # top_clnt.cancel_all_orders(best_market)
         self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
 
-    @try_exc_regular
-    def get_deal_direction_maker(self, positions, results):
-        exchange_buy = results['maker exchange'] if results['maker side'] == 'buy' else results['taker exchange']
-        exchange_sell = results['maker exchange'] if results['maker side'] == 'sell' else results['taker exchange']
-        buy_market = self.clients_with_names[exchange_buy].markets[results['coin']]
-        sell_market = self.clients_with_names[exchange_sell].markets[results['coin']]
-        buy_close = False
-        sell_close = False
-        if pos_buy := positions[exchange_buy].get(buy_market):
-            buy_close = True if pos_buy['amount_usd'] < 0 else False
-        if pos_sell := positions[exchange_sell].get(sell_market):
-            sell_close = True if pos_sell['amount_usd'] > 0 else False
-        if buy_close and sell_close:
-            return 'close'
-        elif not buy_close and not sell_close:
-            return 'open'
-        else:
-            return 'half_close'
+    # @try_exc_regular
+    # def get_deal_direction_maker(self, positions, results):
+    #     exchange_buy = results['maker exchange'] if results['maker side'] == 'buy' else results['taker exchange']
+    #     exchange_sell = results['maker exchange'] if results['maker side'] == 'sell' else results['taker exchange']
+    #     buy_market = self.clients_with_names[exchange_buy].markets[results['coin']]
+    #     sell_market = self.clients_with_names[exchange_sell].markets[results['coin']]
+    #     buy_close = False
+    #     sell_close = False
+    #     if pos_buy := positions[exchange_buy].get(buy_market):
+    #         buy_close = True if pos_buy['amount_usd'] < 0 else False
+    #     if pos_sell := positions[exchange_sell].get(sell_market):
+    #         sell_close = True if pos_sell['amount_usd'] > 0 else False
+    #     if buy_close and sell_close:
+    #         return 'close'
+    #     elif not buy_close and not sell_close:
+    #         return 'open'
+    #     else:
+    #         return 'half_close'
 
     @try_exc_regular
     def create_and_send_deal_report_message(self, results: dict):
-        # poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
-        # direction = self.get_deal_direction_maker(poses, results)
         message = f'MAKER-TAKER DEAL EXECUTED\n{datetime.utcnow()}\n'
         for key, value in results.items():
             message += key.upper() + ': ' + str(value) + '\n'
