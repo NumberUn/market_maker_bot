@@ -150,12 +150,16 @@ class MultiBot:
     def ap_deal_report(self, deal, client_id, precised_sz, ts_send):
         resp_buy = None
         resp_sell = None
+        real_profit = None
         if deal['client_buy'].responses.get(client_id):
             resp_buy = deal['client_buy'].responses.get(client_id)
             deal['client_buy'].responses.pop(client_id)
         if deal['client_sell'].responses.get(client_id):
             resp_sell = deal['client_sell'].responses.get(client_id)
             deal['client_sell'].responses.pop(client_id)
+        if resp_buy and resp_sell:
+            fees = deal['client_buy'].taker_fee + deal['client_sell'].taker_fee
+            real_profit = (resp_sell['price'] - resp_buy['price']) / resp_buy['price'] - fees
         message = f"TAKER DEAL EXECUTED | {deal['coin']}\n"
         message += f"DEAL DIRECTION: {deal['direction']}\n"
         message += f"BUY EXCHANGE: {deal['ex_buy']}\n"
@@ -169,29 +173,16 @@ class MultiBot:
         message += f"REAL SELL PRICE: {resp_sell['price'] if resp_sell else None}\n"
         message += f"REAL BUY SIZE: {resp_buy['size'] if resp_buy else None}\n"
         message += f"REAL SELL SIZE: {resp_sell['size'] if resp_sell else None}\n"
+        message += f"REAL PROFIT: {round(real_profit, 5)}\n"
+        message += f"AGE BUY OB: {round(ts_send - deal['ob_buy_own_ts'], 5)}\n"
+        message += f"AGE SELL OB: {round(ts_send - deal['ob_sell_own_ts'], 5)}\n"
         message += f"PING BUY ORDER: {round(resp_buy['create_order_time'], 5) if resp_buy else None}\n"
         message += f"PING SELL ORDER: {round(resp_sell['create_order_time'], 5) if resp_sell else None}\n"
-        message += f"PING BUY OB OWN: {round(deal['ob_buy_own_ts'], 5)}\n"
-        message += f"PING SELL OB OWN: {round(deal['ob_sell_own_ts'], 5)}\n"
         message += f"PING BUY OB API: {round(deal['ob_buy_api_ts'], 5)}\n"
         message += f"PING SELL OB API : {round(deal['ob_sell_api_ts'], 5)}\n"
         message += f"PING START COUNTING -> SEND: {round(ts_send - deal['ts_start_counting'], 5)}"
         self.telegram.send_message(message, TG_Groups.MainGroup)
-        # result = {
-        #     'exchange_order_id': '',
-        #     'exchange_name': '',
-        #     'status': '',
-        #     'price': '',
-        #     'size': '',
-        #     'api_response': '',
-        #     'timestamp': '',
-        #     'create_order_time': ''}
-        #
-        # deal = {'ts_start_counting': '',
-        #         'ob_buy_own_ts': '',
-        #         'ob_sell_own_ts': '',
-        #         'ob_buy_api_ts': '',
-        #         'ob_sell_api_ts': ''}
+
 
     @try_exc_regular
     def run_sub_processes(self):
