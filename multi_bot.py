@@ -164,7 +164,7 @@ class MultiBot:
         message += f"DEAL DIRECTION: {deal['direction']}\n"
         message += f"BUY EXCHANGE: {deal['ex_buy']}\n"
         message += f"SELL EXCHANGE: {deal['ex_sell']}\n"
-        message += f"TRIGGER EXCHANGE: {deal['trigger_ex']}"
+        message += f"TRIGGER EXCHANGE: {deal['trigger_ex']}\n"
         message += f"TARGET BUY PRICE: {deal['buy_px']}\n"
         message += f"TARGET SELL PRICE: {deal['sell_px']}\n"
         message += f"TARGET SIZE: {precised_sz}\n"
