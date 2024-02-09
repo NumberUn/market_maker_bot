@@ -196,7 +196,7 @@ class MultiBot:
         if self.arbitrage:
             ap_finder = ArbitrageFinder(self.markets, self.clients_with_names, self.profit_open, self.profit_close)
         for client in self.clients:
-            client.markets_list = list([x for x in self.markets.keys() if client.get(x)])
+            client.markets_list = list([x for x in self.markets.keys() if client.markets.get(x)])
             client.market_finder = mm_finder
             client.finder = ap_finder
             client.run_updater()
