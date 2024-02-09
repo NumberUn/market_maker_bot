@@ -162,8 +162,8 @@ class ArbitrageFinder:
                         #         print(f'ACTUAL OB {ob_sell}')
                         #         print()
                     if profit >= target_profit:
-                        print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                        print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
+                        # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                        # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
                                 'buy_px': buy_px,

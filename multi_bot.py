@@ -125,12 +125,12 @@ class MultiBot:
     async def run_arbitrage(self, deal):
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
-            print(f"SIZE CHECK NOT PASSED: SKIP\n")
             return
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
             print(f"PRECISED SIZE = 0: SKIP\n")
+            print(deal)
             return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
@@ -141,9 +141,10 @@ class MultiBot:
         ts_send = time.time()
         if ts_send - deal['ts_start_counting'] > 0.001:
             print(f"TOO LONG PROCESSING FOR AP: SKIP\n")
+            print(deal)
             return
         if self.arbitrage_processing:
-            print(f"ARBITRAGE IN PROCESSING: SKIP\n")
+            # print(f"ARBITRAGE IN PROCESSING: SKIP\n")
             return
         self.arbitrage_processing = True
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
