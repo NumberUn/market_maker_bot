@@ -154,9 +154,16 @@ class ArbitrageFinder:
                     target_profit = self.get_target_profit(direction)
                     if profit > 0:
                         print(f"TRIGGER: {trigger_exchange} {name}: {profit}")
-                        print(client_buy.public_trades.get(buy_mrkt))
-                        print(client_sell.public_trades.get(sell_mrkt))
-                        print()
+                        if buy_trade := client_buy.public_trades.get(buy_mrkt):
+                            if buy_trade['ts'] - ob_buy['timestamp'] > 0:
+                                print(buy_trade)
+                                print(ob_buy)
+                                print()
+                        elif sell_trade := client_sell.public_trades.get(sell_mrkt):
+                            if sell_trade['ts'] - ob_sell['timestamp'] > 0:
+                                print(sell_trade)
+                                print(ob_sell)
+                                print()
                     if profit >= target_profit:
                         print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
                         print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
