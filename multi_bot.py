@@ -123,6 +123,13 @@ class MultiBot:
 
     @try_exc_async
     async def run_arbitrage(self, deal):
+        if self.arbitrage_processing:
+            return
+        ts_send = time.time()
+        if ts_send - deal['ts_start_counting'] > 0.001:
+            print(f"TOO LONG PROCESSING FOR AP: SKIP\n")
+            print(deal)
+            return
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
             return
@@ -130,24 +137,16 @@ class MultiBot:
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
             return
+        self.arbitrage_processing = True
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
                     'client_id': client_id, 'hedge': True}
         sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
                      'client_id': client_id, 'hedge': True}
-        ts_send = time.time()
-        if ts_send - deal['ts_start_counting'] > 0.001:
-            print(f"TOO LONG PROCESSING FOR AP: SKIP\n")
-            print(deal)
-            return
-        if self.arbitrage_processing:
-            # print(f"ARBITRAGE IN PROCESSING: SKIP\n")
-            return
-        self.arbitrage_processing = True
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         deal['client_sell'].async_tasks.append(['create_order', sell_deal])
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.6)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
@@ -515,7 +514,7 @@ class MultiBot:
     async def update_all_av_balances(self):
         for exchange, client in self.clients_with_names.items():
             self.available_balances.update({exchange: client.get_available_balance()})
-            print(f"UPDATED {exchange} avl balances: {client.get_available_balance()}")
+            # print(f"UPDATED {exchange} avl balances: {client.get_available_balance()}")
 
     @try_exc_regular
     def update_all_positions_aggregates(self):
