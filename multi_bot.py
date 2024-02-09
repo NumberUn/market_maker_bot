@@ -129,8 +129,6 @@ class MultiBot:
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
-            print(f"PRECISED SIZE = 0: SKIP\n")
-            print(deal)
             return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
