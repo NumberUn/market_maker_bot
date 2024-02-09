@@ -154,10 +154,9 @@ class ArbitrageFinder:
                     target_profit = self.get_target_profit(direction)
                     if profit > 0:
                         print(f"TRIGGER: {trigger_exchange} {name}: {profit}")
-                        if trigger_exchange == ex_buy:
-                            print(client_buy.public_trades.get(buy_mrkt))
-                        else:
-                            print(client_sell.public_trades.get(sell_mrkt))
+                        print(client_buy.public_trades.get(buy_mrkt))
+                        print(client_sell.public_trades.get(sell_mrkt))
+                        print()
                     if profit >= target_profit:
                         print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
                         print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
