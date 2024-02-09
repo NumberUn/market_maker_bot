@@ -183,7 +183,6 @@ class MultiBot:
         message += f"PING START COUNTING -> SEND: {round(ts_send - deal['ts_start_counting'], 5)}"
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
-
     @try_exc_regular
     def run_sub_processes(self):
         mm_finder = None

@@ -83,9 +83,15 @@ class ArbitrageFinder:
         self.excepts = targets
 
     @try_exc_regular
-    def check_timestamps(self, client_buy, client_sell, ob_buy, ob_sell):
+    def check_timestamps(self, client_buy, client_sell, ts_buy, ts_sell):
         # buy_own_ts_ping = now_ts - ob_buy['ts_ms']
         # sell_own_ts_ping = now_ts - ob_sell['ts_ms']
+        if ts_sell > client_sell.top_ws_ping or ts_buy > client_buy.top_ws_ping:
+            return False
+        return True
+
+    @try_exc_regular
+    def get_ob_pings(self, ob_buy, ob_sell):
         if isinstance(ob_buy['timestamp'], float):
             ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp']
         else:
@@ -94,9 +100,7 @@ class ArbitrageFinder:
             ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp']
         else:
             ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp'] / 1000
-        if ts_sell > client_sell.top_ws_ping or ts_buy > client_buy.top_ws_ping:
-            return False
-        return True
+        return ts_buy, ts_sell
 
         # is_buy_ping_faster = ts_sell - sell_own_ts_ping > ts_buy - buy_own_ts_ping
         # is_buy_last_ob_update = sell_own_ts_ping > buy_own_ts_ping
@@ -128,10 +132,10 @@ class ArbitrageFinder:
                         continue
                     if not ob_sell.get('bids') or not ob_sell.get('asks'):
                         continue
-                    if not self.check_timestamps(client_buy, client_sell, ob_buy, ob_sell):
+                    ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
+                    if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
                         continue
-
-                    # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     # self.append_profit(profit=raw_profit, name=name)
                     # if raw_profit > 0:
                     #     print(f"{name} | RAW profit: {raw_profit}")
@@ -148,19 +152,11 @@ class ArbitrageFinder:
                     #     continue
                     # if target_profit == 'Not found':
                     target_profit = self.get_target_profit(direction)
-                    # if profit > 0:
-                    #     print(f"{name}: {profit}")
+                    if profit > 0:
+                        print(f"{name}: {profit}")
                     if profit >= target_profit:
                         print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
                         print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
-                        if isinstance(ob_buy['timestamp'], float):
-                            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp']
-                        else:
-                            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp'] / 1000
-                        if isinstance(ob_sell['timestamp'], float):
-                            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp']
-                        else:
-                            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp'] / 1000
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
                                 'buy_px': buy_px,
@@ -180,57 +176,6 @@ class ArbitrageFinder:
                                 'profit': profit,
                                 'direction': direction}
                         await run_arbitrage(deal)
-
-                        # loop = asyncio.get_event_loop()
-                        # tasks = [loop.create_task(client_buy.get_orderbook_by_symbol(buy_mrkt)),
-                        #          loop.create_task(client_sell.get_orderbook_by_symbol(sell_mrkt))]
-                        # responses = asyncio.gather(*tasks, return_exceptions=True)
-                        # for response in responses:
-                        #     print(await response)
-                        # buy_sz = ob_buy['asks'][0][1]
-                        # sell_sz = ob_sell['bids'][0][1]
-                        # deal_size_amount = min(buy_sz, sell_sz)
-                        # deal_size_usd_max = deal_size_amount * sell_px
-                        # profit_usd_max = profit * deal_size_usd_max
-                        # possibility = AP(ap_id=uuid.uuid4())
-                        # possibility.start_processing = now_ts
-                        # possibility.ob_buy = ob_buy
-                        # possibility.ob_sell = ob_sell
-                        # possibility.buy_max_amount_ob = buy_sz
-                        # possibility.sell_max_amount_ob = sell_sz
-                        # possibility.buy_price_target = buy_px
-                        # possibility.sell_price_target = sell_px
-                        # possibility.deal_max_amount_ob = deal_size_amount
-                        # possibility.deal_max_usd_ob = deal_size_usd_max
-                        # possibility.profit_rel_target = profit
-                        # possibility.set_data_from_parser(
-                        #     coin=coin,
-                        #     target_profit=target_profit,
-                        #     deal_max_amount_parser=deal_size_amount,
-                        #     deal_max_usd_parser=deal_size_usd_max,
-                        #     expect_profit_rel=round(profit, 5),
-                        #     profit_usd_max=round(profit_usd_max, 3),
-                        #     datetime=datetime.utcnow(),
-                        #     timestamp=int(round(datetime.utcnow().timestamp() * 1000)),
-                        #     deal_direction=direction)
-                        # possibility.set_side_data_from_parser(
-                        #     side='buy',
-                        #     client=client_buy,
-                        #     exchange=ex_buy,
-                        #     market=buy_mrkt,
-                        #     fee=self.fees[ex_buy],
-                        #     price=buy_px,
-                        #     max_amount=buy_sz,
-                        #     ts_ob=ob_buy['timestamp'])
-                        # possibility.set_side_data_from_parser(
-                        #     side='sell',
-                        #     client=client_sell,
-                        #     exchange=ex_sell,
-                        #     market=sell_mrkt,
-                        #     fee=self.fees[ex_sell],
-                        #     max_amount=sell_sz,
-                        #     price=sell_px,
-                        #     ts_ob=ob_sell['timestamp'])
 
     @staticmethod
     @try_exc_regular
