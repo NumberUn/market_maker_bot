@@ -83,11 +83,11 @@ class MultiBot:
         self.rabbit = Rabbit(self._loop)
         self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
+        self.arbitrage_processing = False
         self.run_sub_processes()
         self.requests_in_progress = dict()
         self.created_orders = set()
         self.deleted_orders = set()
-        self.arbitrage_processing = False
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -127,8 +127,9 @@ class MultiBot:
             return
         ts_send = time.time()
         if ts_send - deal['ts_start_counting'] > 0.001:
-            print(f"TOO LONG PROCESSING FOR AP: SKIP\n")
+            print(f"TOO LONG PROCESSING FOR AP {ts_send - deal['ts_start_counting']}: SKIP")
             print(deal)
+            print()
             return
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
