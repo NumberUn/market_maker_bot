@@ -1,12 +1,9 @@
 import asyncio
-import uuid
 from datetime import datetime
 from core.wrappers import try_exc_regular, try_exc_async
-from core.ap_class import AP
 import time
-import threading
 import json
-import traceback
+from core.ap_class import AP
 
 try:
     with open('ranges.json', 'r') as f:
@@ -133,12 +130,10 @@ class ArbitrageFinder:
                     if not ob_sell.get('bids') or not ob_sell.get('asks'):
                         continue
                     ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
-                    if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
-                        continue
+                    # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
+                    #     continue
                     name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     # self.append_profit(profit=raw_profit, name=name)
-                    # if raw_profit > 0:
-                    #     print(f"{name} | RAW profit: {raw_profit}")
                     poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                     direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
                     buy_px = ob_buy['asks'][0][0]
@@ -146,7 +141,10 @@ class ArbitrageFinder:
                     sell_px = ob_sell['bids'][0][0]
                     sell_sz = ob_sell['bids'][0][1]
                     raw_profit = (sell_px - buy_px) / buy_px
-                    profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
+                    fees = self.fees[ex_buy] + self.fees[ex_sell]
+                    profit = raw_profit - fees
+                    # if raw_profit > 0:
+                    #     print(f"{name} | RAW profit: {raw_profit} | FEES: {fees}")
                     # target_profit = self.target_profits.get(name, 'Not found')
                     # if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
                     #     continue
@@ -155,12 +153,12 @@ class ArbitrageFinder:
                     if profit > 0:
                         print(f"TRIGGER: {trigger_exchange} {name}: {profit}")
                         if buy_trade := client_buy.public_trades.get(buy_mrkt):
-                            if buy_trade['ts'] - ob_buy['timestamp'] > 0:
+                            if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
                                 print(buy_trade)
                                 print(ob_buy)
                                 print()
                         elif sell_trade := client_sell.public_trades.get(sell_mrkt):
-                            if sell_trade['ts'] - ob_sell['timestamp'] > 0:
+                            if abs(sell_trade['ts'] - ob_sell['timestamp']) < 0.01:
                                 print(sell_trade)
                                 print(ob_sell)
                                 print()
