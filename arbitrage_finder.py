@@ -104,7 +104,7 @@ class ArbitrageFinder:
         # if is_buy_ping_faster == is_buy_last_ob_update:
 
     @try_exc_async
-    async def count_one_coin(self, coin, trigger_exchange, trigger_side, run_arbitrage):
+    async def count_one_coin(self, coin, trigger_exchange, trigger_side, run_arbitrage, trigger_type):
         now_ts = time.time()
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
@@ -151,17 +151,18 @@ class ArbitrageFinder:
                     # if target_profit == 'Not found':
                     target_profit = self.get_target_profit(direction)
                     if profit > 0:
-                        print(f"TRIGGER: {trigger_exchange} {name}: {profit}")
-                        if buy_trade := client_buy.public_trades.get(buy_mrkt):
-                            if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
-                                print(buy_trade)
-                                print(ob_buy)
-                                print()
-                        elif sell_trade := client_sell.public_trades.get(sell_mrkt):
-                            if abs(sell_trade['ts'] - ob_sell['timestamp']) < 0.01:
-                                print(sell_trade)
-                                print(ob_sell)
-                                print()
+                        print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                        # if buy_trade := client_buy.public_trades.get(buy_mrkt):
+                        #     if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
+                        #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {buy_trade}')
+                        #         print(f'ACTUAL OB {ob_buy}')
+                        #         print()
+                        # elif sell_trade := client_sell.public_trades.get(sell_mrkt):
+                        #     if abs(sell_trade['ts'] - ob_sell['timestamp']) < 0.01:
+                        #         print(f"TRIGGER: {trigger_exchange}\n{name}\nPROFIT {profit}")
+                        #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {sell_trade}')
+                        #         print(f'ACTUAL OB {ob_sell}')
+                        #         print()
                     if profit >= target_profit:
                         print(f"AP! {coin}: S.E: {ex_sell} | B.E: {ex_buy} | Profit: {profit}")
                         print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
@@ -183,7 +184,8 @@ class ArbitrageFinder:
                                 'coin': coin,
                                 'profit': profit,
                                 'direction': direction,
-                                'trigger_ex': trigger_exchange}
+                                'trigger_ex': trigger_exchange,
+                                'trigger_type': trigger_type}
                         await run_arbitrage(deal)
 
     @staticmethod
