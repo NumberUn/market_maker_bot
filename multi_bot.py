@@ -157,7 +157,7 @@ class MultiBot:
         if deal['client_sell'].responses.get(client_id):
             resp_sell = deal['client_sell'].responses.get(client_id)
             deal['client_sell'].responses.pop(client_id)
-        if resp_buy and resp_sell:
+        if resp_buy and resp_sell and resp_sell['price'] and resp_buy['price']:
             fees = deal['client_buy'].taker_fee + deal['client_sell'].taker_fee
             real_profit = (resp_sell['price'] - resp_buy['price']) / resp_buy['price'] - fees
         message = f"TAKER DEAL EXECUTED | {deal['coin']}\n"
