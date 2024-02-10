@@ -125,12 +125,6 @@ class MultiBot:
     async def run_arbitrage(self, deal):
         if self.arbitrage_processing:
             return
-        ts_send = time.time()
-        if ts_send - deal['ts_start_counting'] > 0.001:
-            print(f"TOO LONG PROCESSING FOR AP {ts_send - deal['ts_start_counting']}: SKIP")
-            print(deal)
-            print()
-            return
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
             return
@@ -147,7 +141,8 @@ class MultiBot:
                      'client_id': client_id, 'hedge': True}
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         deal['client_sell'].async_tasks.append(['create_order', sell_deal])
-        await asyncio.sleep(0.6)
+        ts_send = time.time()
+        await asyncio.sleep(0.5)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
@@ -156,12 +151,30 @@ class MultiBot:
         resp_buy = None
         resp_sell = None
         real_profit = None
+        ts_sent_buy_own = 0
+        ts_sent_sell_own = 0
+        ts_sent_buy_api = 0
+        ts_sent_sell_api = 0
+        trigger_side = 'sell' if deal['trigger_ex'] == deal['ex_sell'] else 'buy'
+        count_to_send_ping = ts_send - deal['ts_start_counting']
+        if trigger_side == 'sell':
+            trigger_ping = deal['ob_sell_own_ts']
+            inner_ping = ts_send - trigger_ping
+            fetch_to_count_ping = deal['ts_start_counting'] - trigger_ping
+        else:
+            trigger_ping = deal['ob_buy_own_ts']
+            inner_ping = ts_send - trigger_ping
+            fetch_to_count_ping = deal['ts_start_counting'] - trigger_ping
         if deal['client_buy'].responses.get(client_id):
             resp_buy = deal['client_buy'].responses.get(client_id)
             deal['client_buy'].responses.pop(client_id)
+            ts_sent_buy_own = resp_buy['time_order_sent']
+            ts_sent_buy_api = resp_buy['timestamp']
         if deal['client_sell'].responses.get(client_id):
             resp_sell = deal['client_sell'].responses.get(client_id)
             deal['client_sell'].responses.pop(client_id)
+            ts_sent_sell_own = resp_sell['time_order_sent']
+            ts_sent_sell_api = resp_sell['timestamp']
         if resp_buy and resp_sell and resp_sell['price'] and resp_buy['price']:
             fees = deal['client_buy'].taker_fee + deal['client_sell'].taker_fee
             real_profit = round((resp_sell['price'] - resp_buy['price']) / resp_buy['price'] - fees, 5)
@@ -187,7 +200,13 @@ class MultiBot:
         message += f"PING SELL ORDER: {round(resp_sell['create_order_time'], 5) if resp_sell else None}\n"
         message += f"PING BUY OB API: {round(deal['ob_buy_api_ts'], 5)}\n"
         message += f"PING SELL OB API : {round(deal['ob_sell_api_ts'], 5)}\n"
-        message += f"PING START COUNTING -> SEND: {round(ts_send - deal['ts_start_counting'], 5)}"
+        message += f"PING FETCH -> CREATED TASKS: {round(inner_ping, 5)}\n"
+        message += f"PING FETCH -> COUNT: {round(fetch_to_count_ping, 5)}\n"
+        message += f"PING START COUNTING -> SEND: {round(count_to_send_ping, 5)}\n"
+        message += f"PING FETCH -> SENT BUY: {round(ts_sent_buy_own - trigger_ping, 5)}\n"
+        message += f"PING FETCH -> SENT SELL: {round(ts_sent_sell_own - trigger_ping, 5)}\n"
+        message += f"PING FETCH -> PLACED BUY: {round(ts_sent_sell_api - trigger_ping, 5)}\n"
+        message += f"PING FETCH -> PLACED SELL: {round(ts_sent_sell_api - trigger_ping, 5)}\n"
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular

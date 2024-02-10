@@ -129,20 +129,15 @@ class ArbitrageFinder:
                         continue
                     if not ob_sell.get('bids') or not ob_sell.get('asks'):
                         continue
-                    ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                     # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
                     #     continue
-                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                    # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     # self.append_profit(profit=raw_profit, name=name)
                     poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                     direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
                     buy_px = ob_buy['asks'][0][0]
-                    buy_sz = ob_buy['asks'][0][1]
                     sell_px = ob_sell['bids'][0][0]
-                    sell_sz = ob_sell['bids'][0][1]
-                    raw_profit = (sell_px - buy_px) / buy_px
-                    fees = self.fees[ex_buy] + self.fees[ex_sell]
-                    profit = raw_profit - fees
+                    profit = (sell_px - buy_px) / buy_px - self.fees[ex_buy] - self.fees[ex_sell]
                     # if raw_profit > 0:
                     #     print(f"{name} | RAW profit: {raw_profit} | FEES: {fees}")
                     # target_profit = self.target_profits.get(name, 'Not found')
@@ -164,12 +159,13 @@ class ArbitrageFinder:
                     if profit >= target_profit:
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
+                        ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
                                 'buy_px': buy_px,
                                 'sell_px': sell_px,
-                                'buy_sz': buy_sz,
-                                'sell_sz': sell_sz,
+                                'buy_sz': ob_buy['asks'][0][1],
+                                'sell_sz': ob_sell['bids'][0][1],
                                 'buy_mrkt': buy_mrkt,
                                 'sell_mrkt': sell_mrkt,
                                 'ts_start_counting': now_ts,
