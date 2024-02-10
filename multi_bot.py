@@ -205,7 +205,7 @@ class MultiBot:
         message += f"PING START COUNTING -> SEND: {round(count_to_send_ping, 5)}\n"
         message += f"PING FETCH -> SENT BUY: {round(ts_sent_buy_own - trigger_ping, 5)}\n"
         message += f"PING FETCH -> SENT SELL: {round(ts_sent_sell_own - trigger_ping, 5)}\n"
-        message += f"PING FETCH -> PLACED BUY: {round(ts_sent_sell_api - trigger_ping, 5)}\n"
+        message += f"PING FETCH -> PLACED BUY: {round(ts_sent_buy_api - trigger_ping, 5)}\n"
         message += f"PING FETCH -> PLACED SELL: {round(ts_sent_sell_api - trigger_ping, 5)}\n"
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
