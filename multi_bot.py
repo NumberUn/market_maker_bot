@@ -58,6 +58,7 @@ class MultiBot:
         self.count_ob_level = int(self.setts['MAKER_SHIFTS'])
         self.profit_open = float(self.setts['PROFIT_OPEN'])
         self.profit_close = float(self.setts['PROFIT_CLOSE'])
+        self.deal_pause = float(self.setts['DEALS_PAUSE'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
         self.mm_exchange = self.setts["MM_EXCHANGE"]
         self.clients = []
@@ -142,7 +143,7 @@ class MultiBot:
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(self.deal_pause)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
