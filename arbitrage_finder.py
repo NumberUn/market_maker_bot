@@ -131,20 +131,21 @@ class ArbitrageFinder:
                         continue
                     # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
                     #     continue
-                    # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                    # self.append_profit(profit=raw_profit, name=name)
                     poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                     direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
                     buy_px = ob_buy['asks'][0][0]
                     sell_px = ob_sell['bids'][0][0]
-                    profit = (sell_px - buy_px) / buy_px - self.fees[ex_buy] - self.fees[ex_sell]
-                    # if raw_profit > 0:
-                    #     print(f"{name} | RAW profit: {raw_profit} | FEES: {fees}")
-                    # target_profit = self.target_profits.get(name, 'Not found')
-                    # if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
-                    #     continue
-                    # if target_profit == 'Not found':
-                    target_profit = self.get_target_profit(direction)
+                    fees = self.fees[ex_buy] + self.fees[ex_sell]
+                    raw_profit = (sell_px - buy_px) / buy_px
+                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                    self.append_profit(profit=raw_profit, name=name)
+
+                    # print(f"{name} | Profit: {profit}")
+                    target_profit = self.target_profits.get(name, 'Not found')
+                    if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
+                        continue
+                    if target_profit == 'Not found':
+                        target_profit = self.get_target_profit(direction)
                         # if buy_trade := client_buy.public_trades.get(buy_mrkt):
                         #     if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
                         #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {buy_trade}')
@@ -156,6 +157,7 @@ class ArbitrageFinder:
                         #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {sell_trade}')
                         #         print(f'ACTUAL OB {ob_sell}')
                         #         print()
+                    profit = target_profit - fees
                     if profit >= target_profit:
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
@@ -226,7 +228,7 @@ class ArbitrageFinder:
             # print(direction_one['direction'], direction_two['direction'])
             # print(sum_profit - fees)
             # print(sum_profit - fees_1)
-            while (direction_one['range'][i][0] + direction_two['range'][i][0]) - 2 * fees >= 0:
+            while (direction_one['range'][i][0] + direction_two['range'][i][0]) - 2 * fees >= self.profit_taker:
                 profit_1 = direction_one['range'][i][0]
                 profit_2 = direction_two['range'][i][0]
                 sum_freq_1 += direction_one['range'][i][1]
