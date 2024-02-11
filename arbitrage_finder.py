@@ -3,12 +3,14 @@ from datetime import datetime
 from core.wrappers import try_exc_regular, try_exc_async
 import time
 import json
+import traceback
 from core.ap_class import AP
 
 try:
     with open('ranges.json', 'r') as f:
         pass
-except:
+except Exception as e:
+    traceback.print_exc()
     with open('ranges.json', 'w') as f:
         pass
 
