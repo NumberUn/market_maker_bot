@@ -139,7 +139,6 @@ class ArbitrageFinder:
                     raw_profit = (sell_px - buy_px) / buy_px
                     name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     self.append_profit(profit=raw_profit, name=name)
-
                     # print(f"{name} | Profit: {profit}")
                     target_profit = self.target_profits.get(name, 'Not found')
                     if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
@@ -272,7 +271,7 @@ class ArbitrageFinder:
             with open('ranges.json', 'w') as file:
                 json.dump(self.profit_ranges, file)
             self.last_record = now
-        if now - self.profit_ranges['timestamp_start'] > 3 * 3600 * 24:
+        if now - self.profit_ranges['timestamp_start'] > 3600 * 24:
             with open(f'ranges{str(datetime.now()).split(" ")[0]}.json', 'w') as file:
                 json.dump(self.profit_ranges, file)
             self.profit_ranges = {'timestamp': now, 'timestamp_start': now}
