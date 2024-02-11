@@ -190,6 +190,7 @@ class MultiBot:
         message += f"TARGET SIZE: {precised_sz}\n"
         message += f"TARGET SIZE, USD: {round(precised_sz * deal['buy_px'], 2)}\n"
         message += f"TARGET PROFIT: {deal['profit']}\n"
+        message += f"LIMIT PROFIT: {deal['target_profit']}\n"
         message += f"REAL BUY PRICE: {resp_buy['price'] if resp_buy else None}\n"
         message += f"REAL SELL PRICE: {resp_sell['price'] if resp_sell else None}\n"
         message += f"REAL BUY SIZE: {resp_buy['size'] if resp_buy else None}\n"

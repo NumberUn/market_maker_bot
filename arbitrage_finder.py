@@ -156,7 +156,7 @@ class ArbitrageFinder:
                         #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {sell_trade}')
                         #         print(f'ACTUAL OB {ob_sell}')
                         #         print()
-                    profit = target_profit - fees
+                    profit = raw_profit - fees
                     if profit >= target_profit:
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
@@ -177,6 +177,7 @@ class ArbitrageFinder:
                                 'ex_buy': ex_buy,
                                 'ex_sell': ex_sell,
                                 'coin': coin,
+                                'target_profit': target_profit,
                                 'profit': profit,
                                 'direction': direction,
                                 'trigger_ex': trigger_exchange,
