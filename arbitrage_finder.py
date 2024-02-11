@@ -162,6 +162,8 @@ class ArbitrageFinder:
                     if profit >= target_profit:
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
+                        client_buy.stop_all = True
+                        client_sell.stop_all = True
                         ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
