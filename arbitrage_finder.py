@@ -140,8 +140,7 @@ class ArbitrageFinder:
                     direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
                     buy_px = ob_buy['asks'][0][0]
                     sell_px = ob_sell['bids'][0][0]
-                    fees = self.fees[ex_buy] + self.fees[ex_sell]
-                    raw_profit = (sell_px - buy_px) / buy_px
+                    profit = (sell_px - buy_px) / buy_px - self.fees[ex_buy] - self.fees[ex_sell]
                     # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                     # self.append_profit(profit=raw_profit, name=name)
                     # # print(f"{name} | Profit: {profit}")
@@ -161,7 +160,7 @@ class ArbitrageFinder:
                         #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {sell_trade}')
                         #         print(f'ACTUAL OB {ob_sell}')
                         #         print()
-                    profit = raw_profit - fees
+                    # profit = raw_profit - fees
                     if profit >= target_profit:
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
