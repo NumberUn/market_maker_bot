@@ -166,9 +166,9 @@ class MultiBot:
         # deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
-        gc.unfreeze()
-        # gc.collect()
         await asyncio.sleep(self.deal_pause)
+        gc.unfreeze()
+        gc.collect()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
