@@ -19,6 +19,7 @@ import string
 import os
 import gc
 import uvloop
+from multiprocessing import Pipe
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -144,28 +145,27 @@ class MultiBot:
         self.arbitrage_processing = True
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
-        buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
-                    'client_id': client_id, 'hedge': True}
-        sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
-                     'client_id': client_id, 'hedge': True}
+        # buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
+        #             'client_id': client_id, 'hedge': True}
+        # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
+        #              'client_id': client_id, 'hedge': True}
         # if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
         #     deal['client_buy'].order_loop.create_task(
         #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
-        #     asyncio.run_coroutine_threadsafe(
-        #         deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
-        #         deal['client_sell'].order_loop)
-        # else:
-        #     asyncio.run_coroutine_threadsafe(
-        #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
-        #         deal['client_buy'].order_loop)
+        asyncio.run_coroutine_threadsafe(
+            deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
+            deal['client_sell'].order_loop)
+        asyncio.run_coroutine_threadsafe(
+            deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
+            deal['client_buy'].order_loop).result()
         #     deal['client_sell'].order_loop.create_task(
         #         deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
         # deal['client_buy'].order_loop.create_task(
         #     deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
         # deal['client_sell'].order_loop.create_task(
         #     deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
-        deal['client_buy'].async_tasks.append(['create_order', buy_deal])
-        deal['client_sell'].async_tasks.append(['create_order', sell_deal])
+        # deal['client_buy'].async_tasks.append(['create_order', buy_deal])
+        # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
         await asyncio.sleep(self.deal_pause)
         gc.enable()
@@ -244,11 +244,30 @@ class MultiBot:
             mm_finder = MarketFinder(self.markets, self.clients_with_names, self)
         if self.arbitrage:
             ap_finder = ArbitrageFinder(self, self.markets, self.clients_with_names, self.profit_open, self.profit_close)
+        # pipes = self.get_pipes()
         for client in self.clients:
+            # client.pipes = pipes
             client.markets_list = list([x for x in self.markets.keys() if client.markets.get(x)])
             client.market_finder = mm_finder
             client.finder = ap_finder
             client.run_updater()
+
+    @try_exc_regular
+    def get_pipes(self) -> dict:
+        pipes = dict()
+        for client_1 in self.clients:
+            for client_2 in self.clients:
+                if client_1 == client_2:
+                    continue
+                name = client_1.EXCHANGE_NAME + '-' + client_2.EXCHANGE_NAME
+                name_reverted = client_2.EXCHANGE_NAME + '-' + client_1.EXCHANGE_NAME
+                if pipes.get(name) or pipes.get(name_reverted):
+                    continue
+                pipe_1, pipe_2 = Pipe()
+                pipes.update({name: {client_1.EXCHANGE_NAME: pipe_1, client_2.EXCHANGE_NAME: pipe_2}})
+                pipe_1, pipe_2 = Pipe()
+                pipes.update({name_reverted: {client_2.EXCHANGE_NAME: pipe_1, client_1.EXCHANGE_NAME: pipe_2}})
+        return pipes
 
     @try_exc_async
     async def check_for_non_legit_orders(self):
