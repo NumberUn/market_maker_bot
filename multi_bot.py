@@ -145,8 +145,8 @@ class MultiBot:
         #             'client_id': client_id, 'hedge': True}
         # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
         #              'client_id': client_id, 'hedge': True}
-        deal['client_buy'].stop_all = True
-        deal['client_sell'].stop_all = True
+        # deal['client_buy'].stop_all = True
+        # deal['client_sell'].stop_all = True
         if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
             deal['client_buy'].order_loop.create_task(
                 deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
