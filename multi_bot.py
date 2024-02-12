@@ -16,10 +16,10 @@ from core.telegram import Telegram, TG_Groups
 from core.wrappers import try_exc_regular, try_exc_async
 import random
 import string
-import gc
-import uvloop
-
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+import os
+# import uvloop
+#
+# asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 config = configparser.ConfigParser()
 config.read(sys.argv[1], "utf-8")
@@ -54,6 +54,7 @@ class MultiBot:
         self.instance_markets_amount = int(config['SETTINGS']['INSTANCE_MARKETS_AMOUNT'])
         self.launch_fields = ['env', 'target_profit', 'fee_exchange_1', 'fee_exchange_2', 'shift', 'orders_delay',
                               'max_order_usd', 'max_leverage', 'shift_use_flag']
+        os.nice(-1)
         # ORDER CONFIGS
         self.max_order_size_usd = int(self.setts['ORDER_SIZE'])
         self.min_size = int(self.setts['MIN_ORDER_SIZE'])
@@ -143,8 +144,8 @@ class MultiBot:
         #             'client_id': client_id, 'hedge': True}
         # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
         #              'client_id': client_id, 'hedge': True}
-        # deal['client_buy'].stop_all = True
-        # deal['client_sell'].stop_all = True
+        deal['client_buy'].stop_all = True
+        deal['client_sell'].stop_all = True
         if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
             deal['client_buy'].order_loop.create_task(
                 deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
