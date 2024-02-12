@@ -134,12 +134,16 @@ class MultiBot:
         self.arbitrage_processing = True
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
-        buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
-                    'client_id': client_id, 'hedge': True}
-        sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
-                     'client_id': client_id, 'hedge': True}
-        deal['client_buy'].async_tasks.append(['create_order', buy_deal])
-        deal['client_sell'].async_tasks.append(['create_order', sell_deal])
+        # buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
+        #             'client_id': client_id, 'hedge': True}
+        # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
+        #              'client_id': client_id, 'hedge': True}
+        deal['client_buy'].order_loop.create_task(
+            deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
+        deal['client_sell'].order_loop.create_task(
+            deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
+        # deal['client_buy'].async_tasks.append(['create_order', buy_deal])
+        # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
         await asyncio.sleep(self.deal_pause)
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
