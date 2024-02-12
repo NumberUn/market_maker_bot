@@ -17,9 +17,10 @@ from core.wrappers import try_exc_regular, try_exc_async
 import random
 import string
 import os
-# import uvloop
-#
-# asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+import gc
+import uvloop
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 config = configparser.ConfigParser()
 config.read(sys.argv[1], "utf-8")
@@ -136,36 +137,38 @@ class MultiBot:
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
             return
-        self.arbitrage_processing = True
-
-        rand_id = self.id_generator()
-        client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
-        # buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
-        #             'client_id': client_id, 'hedge': True}
-        # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
-        #              'client_id': client_id, 'hedge': True}
+        gc.freeze()
         deal['client_buy'].stop_all = True
         deal['client_sell'].stop_all = True
-        if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
-            deal['client_buy'].order_loop.create_task(
-                deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
-            asyncio.run_coroutine_threadsafe(
-                deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
-                deal['client_sell'].order_loop)
-        else:
-            asyncio.run_coroutine_threadsafe(
-                deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
-                deal['client_buy'].order_loop)
-            deal['client_sell'].order_loop.create_task(
-                deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
+        self.arbitrage_processing = True
+        rand_id = self.id_generator()
+        client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
+        buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
+                    'client_id': client_id, 'hedge': True}
+        sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
+                     'client_id': client_id, 'hedge': True}
+        # if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
+        #     deal['client_buy'].order_loop.create_task(
+        #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
+        #     asyncio.run_coroutine_threadsafe(
+        #         deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
+        #         deal['client_sell'].order_loop)
+        # else:
+        #     asyncio.run_coroutine_threadsafe(
+        #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
+        #         deal['client_buy'].order_loop)
+        #     deal['client_sell'].order_loop.create_task(
+        #         deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
         # deal['client_buy'].order_loop.create_task(
         #     deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
         # deal['client_sell'].order_loop.create_task(
         #     deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
-        # deal['client_buy'].async_tasks.append(['create_order', buy_deal])
-        # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
+        deal['client_buy'].async_tasks.append(['create_order', buy_deal])
+        deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
         await asyncio.sleep(self.deal_pause)
+        gc.unfreeze()
+        gc.collect()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 
