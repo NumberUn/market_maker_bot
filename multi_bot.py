@@ -16,6 +16,10 @@ from core.telegram import Telegram, TG_Groups
 from core.wrappers import try_exc_regular, try_exc_async
 import random
 import string
+import gc
+import uvloop
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 config = configparser.ConfigParser()
 config.read(sys.argv[1], "utf-8")
@@ -126,12 +130,15 @@ class MultiBot:
     async def run_arbitrage(self, deal):
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
+            gc.enable()
             return
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
+            gc.enable()
             return
         self.arbitrage_processing = True
+
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         # buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
@@ -140,12 +147,18 @@ class MultiBot:
         #              'client_id': client_id, 'hedge': True}
         deal['client_buy'].stop_all = True
         deal['client_sell'].stop_all = True
-        asyncio.run_coroutine_threadsafe(
-            deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
-            deal['client_buy'].order_loop)
-        asyncio.run_coroutine_threadsafe(
-            deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
-            deal['client_sell'].order_loop)
+        if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
+            deal['client_buy'].order_loop.create_task(
+                deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
+            asyncio.run_coroutine_threadsafe(
+                deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
+                deal['client_sell'].order_loop)
+        else:
+            asyncio.run_coroutine_threadsafe(
+                deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
+                deal['client_buy'].order_loop)
+            deal['client_sell'].order_loop.create_task(
+                deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
         # deal['client_buy'].order_loop.create_task(
         #     deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
         # deal['client_sell'].order_loop.create_task(
@@ -154,6 +167,7 @@ class MultiBot:
         # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
         await asyncio.sleep(self.deal_pause)
+        gc.enable()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 

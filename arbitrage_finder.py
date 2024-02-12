@@ -5,6 +5,10 @@ import time
 import json
 import traceback
 from core.ap_class import AP
+import gc
+import uvloop
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 try:
     with open('ranges.json', 'r') as f:
@@ -162,6 +166,8 @@ class ArbitrageFinder:
                         #         print()
                     # profit = raw_profit - fees
                     if profit >= target_profit:
+                        if gc.isenabled():
+                            gc.disable()
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
                         ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
