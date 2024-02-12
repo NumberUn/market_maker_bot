@@ -124,8 +124,6 @@ class MultiBot:
 
     @try_exc_async
     async def run_arbitrage(self, deal):
-        if self.arbitrage_processing:
-            return
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
             return
@@ -218,7 +216,7 @@ class MultiBot:
         if self.market_maker:
             mm_finder = MarketFinder(self.markets, self.clients_with_names, self)
         if self.arbitrage:
-            ap_finder = ArbitrageFinder(self.markets, self.clients_with_names, self.profit_open, self.profit_close)
+            ap_finder = ArbitrageFinder(self, self.markets, self.clients_with_names, self.profit_open, self.profit_close)
         for client in self.clients:
             client.markets_list = list([x for x in self.markets.keys() if client.markets.get(x)])
             client.market_finder = mm_finder

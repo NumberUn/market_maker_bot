@@ -17,7 +17,8 @@ except Exception as e:
 
 class ArbitrageFinder:
 
-    def __init__(self, markets, clients_with_names, profit_taker, profit_close, state='Bot'):
+    def __init__(self, multibot, markets, clients_with_names, profit_taker, profit_close, state='Bot'):
+        self.multibot = multibot
         self.state = state
         self.profit_taker = profit_taker
         self.profit_close = profit_close
@@ -106,7 +107,9 @@ class ArbitrageFinder:
         # if is_buy_ping_faster == is_buy_last_ob_update:
 
     @try_exc_async
-    async def count_one_coin(self, coin, trigger_exchange, trigger_side, run_arbitrage, trigger_type):
+    async def count_one_coin(self, coin, trigger_exchange, trigger_side, trigger_type):
+        if self.multibot.arbitrage_processing:
+            return
         now_ts = time.time()
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
@@ -162,8 +165,6 @@ class ArbitrageFinder:
                     if profit >= target_profit:
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
-                        client_buy.stop_all = True
-                        client_sell.stop_all = True
                         ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
@@ -186,7 +187,7 @@ class ArbitrageFinder:
                                 'direction': direction,
                                 'trigger_ex': trigger_exchange,
                                 'trigger_type': trigger_type}
-                        await run_arbitrage(deal)
+                        await self.multibot.run_arbitrage(deal)
 
     @staticmethod
     @try_exc_regular
