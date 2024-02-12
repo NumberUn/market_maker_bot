@@ -138,10 +138,18 @@ class MultiBot:
         #             'client_id': client_id, 'hedge': True}
         # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
         #              'client_id': client_id, 'hedge': True}
-        deal['client_buy'].order_loop.create_task(
-            deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
-        deal['client_sell'].order_loop.create_task(
-            deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
+        deal['client_buy'].stop_all = True
+        deal['client_sell'].stop_all = True
+        asyncio.run_coroutine_threadsafe(
+            deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
+            deal['client_buy'].order_loop)
+        asyncio.run_coroutine_threadsafe(
+            deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
+            deal['client_sell'].order_loop)
+        # deal['client_buy'].order_loop.create_task(
+        #     deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
+        # deal['client_sell'].order_loop.create_task(
+        #     deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
         # deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
