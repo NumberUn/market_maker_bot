@@ -154,7 +154,7 @@ class MultiBot:
         #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
         asyncio.run_coroutine_threadsafe(
             deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
-            deal['client_sell'].order_loop).result()
+            deal['client_sell'].order_loop)
         asyncio.run_coroutine_threadsafe(
             deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
             deal['client_buy'].order_loop).result()
