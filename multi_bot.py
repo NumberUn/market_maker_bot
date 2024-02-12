@@ -130,12 +130,10 @@ class MultiBot:
     async def run_arbitrage(self, deal):
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
-            gc.unfreeze()
             return
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
-            gc.unfreeze()
             return
         self.arbitrage_processing = True
 
@@ -167,8 +165,6 @@ class MultiBot:
         # deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
         await asyncio.sleep(self.deal_pause)
-        gc.unfreeze()
-        gc.collect()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
 

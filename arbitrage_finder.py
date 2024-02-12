@@ -166,7 +166,6 @@ class ArbitrageFinder:
                         #         print()
                     # profit = raw_profit - fees
                     if profit >= target_profit:
-                        gc.freeze()
                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
                         ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
