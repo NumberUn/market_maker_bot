@@ -135,7 +135,7 @@ class DB:
             'exchange_order_id': resp['exchange_order_id'] if resp else 'default',
             'type': 'GTC',
             'status': 'Processing',
-            'exchange': deal['client_buy'].EXCHANGE_NAME if side == 'buy' else deal['client_sell'].EXCHANGE_NAME,
+            'exchange_name': deal['client_buy'].EXCHANGE_NAME if side == 'buy' else deal['client_sell'].EXCHANGE_NAME,
             'side': side,
             'symbol': deal['buy_mrkt'] if side == 'buy' else deal['sell_mrkt'],
             'expect_price': deal['buy_px'] if side == 'buy' else deal['sell_px'],
