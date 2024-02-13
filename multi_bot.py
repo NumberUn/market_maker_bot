@@ -149,22 +149,6 @@ class MultiBot:
                     'client_id': client_id, 'hedge': True}
         sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
                      'client_id': client_id, 'hedge': True}
-        # if deal['trigger_ex'] == deal['client_buy'].EXCHANGE_NAME:
-        #     deal['client_buy'].order_loop.create_task(
-        #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
-        #     asyncio.run_coroutine_threadsafe(
-        #         deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id),
-        #         deal['client_sell'].order_loop)
-        # else:
-        #     asyncio.run_coroutine_threadsafe(
-        #         deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id),
-        #         deal['client_buy'].order_loop)
-        #     deal['client_sell'].order_loop.create_task(
-        #         deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
-        # deal['client_buy'].order_loop.create_task(
-        #     deal['client_buy'].create_fast_order(deal['buy_px'], precised_sz, 'buy', deal['buy_mrkt'], client_id))
-        # deal['client_sell'].order_loop.create_task(
-        #     deal['client_sell'].create_fast_order(deal['sell_px'], precised_sz, 'sell', deal['sell_mrkt'], client_id))
         deal['client_buy'].async_tasks.append(['create_order', buy_deal])
         deal['client_sell'].async_tasks.append(['create_order', sell_deal])
         ts_send = time.time()
@@ -235,6 +219,13 @@ class MultiBot:
         message += f"PING FETCH -> SENT SELL: {round(ts_sent_sell_own - trigger_ping, 5)}\n"
         message += f"PING FETCH -> PLACED BUY: {round(ts_sent_buy_api - trigger_ping, 5)}\n"
         message += f"PING FETCH -> PLACED SELL: {round(ts_sent_sell_api - trigger_ping, 5)}\n"
+        ap_id = uuid.uuid4()
+        buy_id = uuid.uuid4()
+        sell_id = uuid.uuid4()
+        self.db.save_arbitrage_possibilities(deal, precised_sz, ts_send, ap_id, buy_id, sell_id, inner_ping)
+        self.db.save_order(buy_id, deal, ap_id, resp_buy, 'buy', precised_sz, self.env)
+        self.db.save_order(sell_id, sell_exchange_order_id, client_sell, 'sell', ap_id, sell_order_place_time,
+                           shifted_sell_px, sell_market, self.env)
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
