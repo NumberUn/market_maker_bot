@@ -125,7 +125,7 @@ class DB:
         self.rabbit.add_task_to_queue(message, "ARBITRAGE_POSSIBILITIES")
 
     @try_exc_regular
-    def save_order(self, order_id, deal, ap_id, resp, side, size, env):
+    def save_order(self, order_id, deal, ap_id, resp, side, size, ts_sent, env):
         message = {
             'id': order_id,
             'datetime': datetime.utcnow(),
@@ -142,11 +142,11 @@ class DB:
             'expect_amount_coin': size,
             'expect_amount_usd': size * deal['buy_px'],
             'expect_fee': deal['client_buy'].taker_fee if side == 'buy' else deal['client_sell'].taker_fee,
-            'factual_price': resp['price'] or 0,
-            'factual_amount_coin': resp['size'] or 0,
-            'factual_amount_usd': resp['size'] * resp['price'] or 0,
+            'factual_price': resp['price'] if resp else 0,
+            'factual_amount_coin': resp['size'] if resp else 0,
+            'factual_amount_usd': resp['size'] * resp['price'] if resp else 0,
             'factual_fee': deal['client_buy'].taker_fee if side == 'buy' else deal['client_sell'].taker_fee,
-            'order_place_time': resp['create_order_time'] or 'default',
+            'order_place_time': int(resp['timestamp'] * 1000) if resp else int(ts_sent * 1000),
             'env': env,
         }
         print(f"SENDING TO MQ. SAVE ORDER: {message}")

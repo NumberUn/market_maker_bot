@@ -223,8 +223,8 @@ class MultiBot:
         buy_id = uuid.uuid4()
         sell_id = uuid.uuid4()
         self.db.save_arbitrage_possibilities(deal, precised_sz, ts_send, ap_id, buy_id, sell_id, inner_ping)
-        self.db.save_order(buy_id, deal, ap_id, resp_buy, 'buy', precised_sz, self.env)
-        self.db.save_order(sell_id, deal, ap_id, resp_sell, 'sell', precised_sz, self.env)
+        self.db.save_order(buy_id, deal, ap_id, resp_buy, 'buy', precised_sz, ts_send, self.env)
+        self.db.save_order(sell_id, deal, ap_id, resp_sell, 'sell', precised_sz, ts_send, self.env)
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
