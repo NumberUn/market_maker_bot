@@ -243,23 +243,6 @@ class MultiBot:
             client.finder = ap_finder
             client.run_updater()
 
-    @try_exc_regular
-    def get_pipes(self) -> dict:
-        pipes = dict()
-        for client_1 in self.clients:
-            for client_2 in self.clients:
-                if client_1 == client_2:
-                    continue
-                name = client_1.EXCHANGE_NAME + '-' + client_2.EXCHANGE_NAME
-                name_reverted = client_2.EXCHANGE_NAME + '-' + client_1.EXCHANGE_NAME
-                if pipes.get(name) or pipes.get(name_reverted):
-                    continue
-                pipe_1, pipe_2 = Pipe()
-                pipes.update({name: {client_1.EXCHANGE_NAME: pipe_1, client_2.EXCHANGE_NAME: pipe_2}})
-                pipe_1, pipe_2 = Pipe()
-                pipes.update({name_reverted: {client_2.EXCHANGE_NAME: pipe_1, client_1.EXCHANGE_NAME: pipe_2}})
-        return pipes
-
     @try_exc_async
     async def check_for_non_legit_orders(self):
         time_start = time.time()
