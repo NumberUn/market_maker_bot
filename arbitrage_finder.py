@@ -14,7 +14,7 @@ try:
     with open('ranges.json', 'r') as f:
         pass
 except Exception as e:
-    traceback.print_exc()
+    # traceback.print_exc()
     with open('ranges.json', 'w') as f:
         pass
 
