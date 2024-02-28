@@ -144,15 +144,16 @@ class ArbitrageFinder:
                     direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
                     buy_px = ob_buy['asks'][0][0]
                     sell_px = ob_sell['bids'][0][0]
-                    profit = (sell_px - buy_px) / buy_px - self.fees[ex_buy] - self.fees[ex_sell]
-                    # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                    # self.append_profit(profit=raw_profit, name=name)
-                    # # print(f"{name} | Profit: {profit}")
-                    # target_profit = self.target_profits.get(name, 'Not found')
-                    # if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
-                    #     continue
-                    # if target_profit == 'Not found':
-                    target_profit = self.get_target_profit(direction)
+                    raw_profit = (sell_px - buy_px) / buy_px
+                    profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
+                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                    self.append_profit(profit=raw_profit, name=name)
+                    # print(f"{name} | Profit: {profit}")
+                    target_profit = self.target_profits.get(name, 'Not found')
+                    if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
+                        continue
+                    if target_profit == 'Not found':
+                        target_profit = self.get_target_profit(direction)
                         # if buy_trade := client_buy.public_trades.get(buy_mrkt):
                         #     if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
                         #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {buy_trade}')
