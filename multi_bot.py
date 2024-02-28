@@ -234,6 +234,8 @@ class MultiBot:
         if self.arbitrage:
             ap_finder = ArbitrageFinder(self, self.markets, self.clients_with_names, self.profit_open, self.profit_close)
         # pipes = self.get_pipes()
+        if self.markets.get('PEPE'):
+            self.markets.pop('PEPE')
         for client in self.clients:
             # client.pipes = pipes
             client.markets_list = list([x for x in self.markets.keys() if client.markets.get(x)])
