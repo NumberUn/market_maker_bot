@@ -140,8 +140,6 @@ class MultiBot:
         if precised_sz == 0:
             gc.enable()
             return
-        deal['client_buy'].stop_all = True
-        deal['client_sell'].stop_all = True
         self.arbitrage_processing = True
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
