@@ -23,6 +23,7 @@ class ArbitrageFinder:
 
     def __init__(self, multibot, markets, clients_with_names, profit_taker, profit_close, state='Bot'):
         self.multibot = multibot
+        self.write_ranges = False
         self.state = state
         self.profit_taker = profit_taker
         self.profit_close = profit_close
@@ -30,15 +31,13 @@ class ArbitrageFinder:
         self.coins = [x for x in markets.keys()]
         self.clients_with_names = clients_with_names
         self.fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
-        self.last_record = time.time()
-        self.coins_to_check = set()
-        self.profit_precise = 4
-        self.potential_deals = []
-        self.profit_precise = 4
-        self.profit_ranges = self.unpack_ranges()
-        self.target_profits = self.get_all_target_profits()
-        print(f"TARGET PROFIT RANGES FOR {(time.time() - self.profit_ranges['timestamp_start']) / 3600} HOURS")
-        print(self.target_profits)
+        if self.write_ranges:
+            self.last_record = time.time()
+            self.profit_precise = 4
+            self.profit_ranges = self.unpack_ranges()
+            self.target_profits = self.get_all_target_profits()
+            print(f"TARGET PROFIT RANGES FOR {(time.time() - self.profit_ranges['timestamp_start']) / 3600} HOURS")
+            print(self.target_profits)
 
     @try_exc_regular
     def get_target_profit(self, deal_direction):
@@ -146,14 +145,18 @@ class ArbitrageFinder:
                     sell_px = ob_sell['bids'][0][0]
                     raw_profit = (sell_px - buy_px) / buy_px
                     profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
-                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                    self.append_profit(profit=raw_profit, name=name)
-                    # print(f"{name} | Profit: {profit}")
-                    target_profit = self.target_profits.get(name, 'Not found')
-                    if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
-                        continue
-                    if target_profit == 'Not found':
+                    if self.write_ranges:
+                        name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                        self.append_profit(profit=raw_profit, name=name)
+                        # print(f"{name} | Profit: {profit}")
+                        target_profit = self.target_profits.get(name, 'Not found')
+                        if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
+                            continue
+                        if target_profit == 'Not found':
+                            target_profit = self.get_target_profit(direction)
+                    else:
                         target_profit = self.get_target_profit(direction)
+
                         # if buy_trade := client_buy.public_trades.get(buy_mrkt):
                         #     if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
                         #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {buy_trade}')
