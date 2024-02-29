@@ -178,7 +178,7 @@ class ArbitrageFinder:
                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
                         ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                         if ts_buy > 0.15 or ts_sell > 0.15:
-                            print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
+                            # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                             return
                         deal = {'client_buy': client_buy,
                                 'client_sell': client_sell,
