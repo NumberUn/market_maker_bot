@@ -19,7 +19,7 @@ import string
 import os
 import gc
 import uvloop
-from multiprocessing import Pipe
+
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -44,6 +44,7 @@ class MultiBot:
                  'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing']
 
     def __init__(self):
+        print(f"STARTED BOT")
         self.bot_launch_id = uuid.uuid4()
         self.db = None
         self.setts = config['SETTINGS']
@@ -237,6 +238,7 @@ class MultiBot:
         if self.markets.get('PEPE'):
             self.markets.pop('PEPE')
         for client in self.clients:
+            print(f"{client.EXCHANGE_NAME} started to process")
             # client.pipes = pipes
             client.markets_list = list([x for x in self.markets.keys() if client.markets.get(x)])
             client.market_finder = mm_finder
