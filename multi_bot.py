@@ -44,7 +44,6 @@ class MultiBot:
                  'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing']
 
     def __init__(self):
-        print(f"STARTED BOT")
         self.bot_launch_id = uuid.uuid4()
         self.db = None
         self.setts = config['SETTINGS']
