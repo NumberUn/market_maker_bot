@@ -23,7 +23,7 @@ class ArbitrageFinder:
 
     def __init__(self, multibot, markets, clients_with_names, profit_taker, profit_close, state='Bot'):
         self.multibot = multibot
-        self.write_ranges = True
+        self.write_ranges = False
         self.state = state
         self.profit_taker = profit_taker
         self.profit_close = profit_close
