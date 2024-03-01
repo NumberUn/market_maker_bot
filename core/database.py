@@ -94,7 +94,15 @@ class DB:
     #                                queue_name=RabbitMqQueues.BALANCE_DETALIZATION
     #                                )
     @try_exc_regular
-    def save_arbitrage_possibilities(self, deal, precised_sz, ts_send, ap_id, buy_id, sell_id, inner_ping):
+    def save_arbitrage_possibilities(self,
+                                     deal: dict,
+                                     precised_sz: float,
+                                     ts_send: float,
+                                     ap_id: uuid.uuid4,
+                                     buy_id: uuid.uuid4,
+                                     sell_id: uuid.uuid4,
+                                     inner_ping: float,
+                                     env: str):
         message = {
             'id': ap_id,
             'datetime': datetime.utcnow(),
@@ -119,13 +127,25 @@ class DB:
             'chat_id': 12345678,
             'bot_token': 'Placeholder',
             'status': 'Processing',
-            'bot_launch_id': 12345678
+            'bot_launch_id': 12345678,
+            'env': env
         }
         print(f"SENDING TO MQ. SAVE AP: {message}")
         self.rabbit.add_task_to_queue(message, "ARBITRAGE_POSSIBILITIES")
 
     @try_exc_regular
-    def save_order(self, order_id, deal, ap_id, resp, side, size, ts_sent, env):
+    def save_order(self,
+                   order_id: uuid.uuid4,
+                   deal: dict,
+                   ap_id: uuid.uuid4,
+                   resp: dict,
+                   side: str,
+                   size: float,
+                   ts_sent: float,
+                   env: str,
+                   oneway_ping_orderbook: float,
+                   oneway_ping_order: float,
+                   inner_ping: float):
         message = {
             'id': order_id,
             'datetime': datetime.utcnow(),
@@ -148,6 +168,9 @@ class DB:
             'factual_fee': deal['client_buy'].taker_fee if side == 'buy' else deal['client_sell'].taker_fee,
             'order_place_time': int(resp['timestamp'] * 1000) if resp else int(ts_sent * 1000),
             'env': env,
+            'oneway_ping_orderbook': oneway_ping_orderbook,
+            'oneway_ping_order': oneway_ping_order,
+            'inner_ping': inner_ping
         }
         print(f"SENDING TO MQ. SAVE ORDER: {message}")
         self.rabbit.add_task_to_queue(message, "ORDERS")

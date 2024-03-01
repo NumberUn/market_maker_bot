@@ -187,6 +187,12 @@ class MultiBot:
         if resp_buy and resp_sell and resp_sell['price'] and resp_buy['price']:
             fees = deal['client_buy'].taker_fee + deal['client_sell'].taker_fee
             real_profit = round((resp_sell['price'] - resp_buy['price']) / resp_buy['price'] - fees, 5)
+        oneway_ping_orderbook_buy = round(deal['ob_buy_api_ts'], 5)
+        oneway_ping_orderbook_sell = round(deal['ob_sell_api_ts'], 5)
+        oneway_ping_order_buy = round(resp_buy['create_order_time'], 5) if resp_buy else None
+        oneway_ping_order_sell = round(resp_sell['create_order_time'], 5) if resp_sell else None
+        inner_ping_buy = round(ts_sent_buy_own - trigger_ping, 5)
+        inner_ping_sell = round(ts_sent_sell_own - trigger_ping, 5)
         message = f"TAKER DEAL EXECUTED | {deal['coin']}\n"
         message += f"DEAL DIRECTION: {deal['direction']}\n"
         message += f"BUY EXCHANGE: {deal['ex_buy']}\n"
@@ -206,23 +212,43 @@ class MultiBot:
         message += f"REAL PROFIT: {real_profit}\n"
         message += f"AGE BUY OB: {round(ts_send - deal['ob_buy_own_ts'], 5)}\n"
         message += f"AGE SELL OB: {round(ts_send - deal['ob_sell_own_ts'], 5)}\n"
-        message += f"PING BUY ORDER: {round(resp_buy['create_order_time'], 5) if resp_buy else None}\n"
-        message += f"PING SELL ORDER: {round(resp_sell['create_order_time'], 5) if resp_sell else None}\n"
-        message += f"PING BUY OB API: {round(deal['ob_buy_api_ts'], 5)}\n"
-        message += f"PING SELL OB API : {round(deal['ob_sell_api_ts'], 5)}\n"
+        message += f"PING BUY ORDER: {oneway_ping_order_buy}\n"
+        message += f"PING SELL ORDER: {oneway_ping_order_sell}\n"
+        message += f"PING BUY OB API: {oneway_ping_orderbook_buy}\n"
+        message += f"PING SELL OB API : {oneway_ping_orderbook_sell}\n"
         message += f"PING FETCH -> CREATED TASKS: {round(inner_ping, 5)}\n"
         message += f"PING FETCH -> COUNT: {round(fetch_to_count_ping, 5)}\n"
         message += f"PING START COUNTING -> SEND: {round(count_to_send_ping, 5)}\n"
-        message += f"PING FETCH -> SENT BUY: {round(ts_sent_buy_own - trigger_ping, 5)}\n"
-        message += f"PING FETCH -> SENT SELL: {round(ts_sent_sell_own - trigger_ping, 5)}\n"
+        message += f"PING FETCH -> SENT BUY: {inner_ping_buy}\n"
+        message += f"PING FETCH -> SENT SELL: {inner_ping_sell}\n"
         message += f"PING FETCH -> PLACED BUY: {round(ts_sent_buy_api - trigger_ping, 5)}\n"
         message += f"PING FETCH -> PLACED SELL: {round(ts_sent_sell_api - trigger_ping, 5)}\n"
         ap_id = uuid.uuid4()
         buy_id = uuid.uuid4()
         sell_id = uuid.uuid4()
-        self.db.save_arbitrage_possibilities(deal, precised_sz, ts_send, ap_id, buy_id, sell_id, inner_ping)
-        self.db.save_order(buy_id, deal, ap_id, resp_buy, 'buy', precised_sz, ts_send, self.env)
-        self.db.save_order(sell_id, deal, ap_id, resp_sell, 'sell', precised_sz, ts_send, self.env)
+        self.db.save_arbitrage_possibilities(deal, precised_sz, ts_send, ap_id, buy_id, sell_id, inner_ping, self.env)
+        self.db.save_order(order_id=buy_id,
+                           deal=deal,
+                           ap_id=ap_id,
+                           resp=resp_buy,
+                           side='buy',
+                           size=precised_sz,
+                           ts_sent=ts_send,
+                           env=self.env,
+                           oneway_ping_orderbook=oneway_ping_orderbook_buy,
+                           oneway_ping_order=oneway_ping_order_buy,
+                           inner_ping=inner_ping_buy)
+        self.db.save_order(order_id=sell_id,
+                           deal=deal,
+                           ap_id=ap_id,
+                           resp=resp_sell,
+                           side='sell',
+                           size=precised_sz,
+                           ts_sent=ts_send,
+                           env=self.env,
+                           oneway_ping_orderbook=oneway_ping_orderbook_sell,
+                           oneway_ping_order=oneway_ping_order_sell,
+                           inner_ping=inner_ping_sell)
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
