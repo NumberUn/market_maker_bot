@@ -128,7 +128,8 @@ class DB:
             'bot_token': 'Placeholder',
             'status': 'Processing',
             'bot_launch_id': 12345678,
-            'env': env
+            'env': env,
+            'target_profit': deal['target_profit']
         }
         print(f"SENDING TO MQ. SAVE AP: {message}")
         self.rabbit.add_task_to_queue(message, "ARBITRAGE_POSSIBILITIES")
