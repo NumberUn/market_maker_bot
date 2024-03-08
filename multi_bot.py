@@ -313,6 +313,11 @@ class MultiBot:
                 mm_client.responses.pop(client_id)
                 self.requests_in_progress.update({market_id: False})
                 return
+            elif resp := mm_client.responses.get(order_id):
+                self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
+                mm_client.responses.pop(client_id)
+                self.requests_in_progress.update({market_id: False})
+                return
             await asyncio.sleep(0.001)
         await self.delete_maker_order(coin, order_id)
         # self.telegram.send_message(f"ALERT! MAKER ORDER WAS NOT AMENDED\n{deal}", TG_Groups.MainGroup)
