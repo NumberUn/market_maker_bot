@@ -247,19 +247,20 @@ class ArbitrageFinder:
 
     @try_exc_regular
     def get_all_target_profits(self):
-        coins = self.get_coins_profit_ranges()
-        if not coins:
+        directions = self.get_coins_profit_ranges()
+        if not directions:
             return dict()
         target_profits = dict()
-        for coin in coins.keys():
-            if 'reversed' in coin:
+        for direction in directions.keys():
+            exchange_1 = direction.split(':')[1].split('|')[0]
+            exchange_2 = direction.split(':')[2].split('|')[0]
+            coin = direction.split(':')[-1]
+            reversed_direction = f"B:{exchange_2}|S:{exchange_1}|C:{coin}"
+            if not directions.get(reversed_direction):
                 continue
-            if not coins.get(coin + '_reversed'):
-                continue
-            direction_one = coins[coin]
-            direction_two = coins[coin + '_reversed']
-            exchange_1 = direction_one['direction'].split(':')[1].split('|')[0]
-            exchange_2 = direction_two['direction'].split(':')[1].split('|')[0]
+            direction_one = directions[direction]
+            direction_two = directions[reversed_direction]
+
             if exchange_1 not in (self.clients_with_names.keys()) or exchange_2 not in (self.clients_with_names.keys()):
                 continue
             sum_freq_1 = 0
@@ -324,22 +325,17 @@ class ArbitrageFinder:
 
     @try_exc_regular
     def get_coins_profit_ranges(self):
-        coins = dict()
+        directions = dict()
         for direction in self.profit_ranges.keys():
             if 'timestamp' in direction:
                 # Passing the timestamp key in profit_ranges dict
                 continue
-            coin = direction.split('C:')[1]
             range = sorted([[float(x), y] for x, y in self.profit_ranges[direction].items()], reverse=True)
             range_len = sum([x[1] for x in range])
-            if coins.get(coin):
-                # Filling reversed direction of trades if one direction for this coin already filled
-                coin = coin + '_reversed'
-            upd_data = {coin: {'range': range,  # profits dictionary in format key = profit, value = frequency
-                               'range_len': range_len,  # sample total size of all records
-                               'direction': direction}}  # direction in format B:{exch_buy}|S:{exch_sell}|C:{coin} (str)
-            coins.update(upd_data)
-        return coins
+            upd_data = {direction: {'range': range,  # profits dictionary in format key = profit, value = frequency
+                               'range_len': range_len}}  # direction in format B:{exch_buy}|S:{exch_sell}|C:{coin} (str)
+            directions.update(upd_data)
+        return directions
 
 
 if __name__ == '__main__':
