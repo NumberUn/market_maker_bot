@@ -315,7 +315,7 @@ class MultiBot:
                 return
             elif resp := mm_client.responses.get(order_id):
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                mm_client.responses.pop(client_id)
+                mm_client.responses.pop(order_id)
                 self.requests_in_progress.update({market_id: False})
                 return
             await asyncio.sleep(0.001)
@@ -400,18 +400,18 @@ class MultiBot:
                 if best_price:
                     if side == 'buy':
                         if best_price > price:
-                            best_price = price * 1.01
+                            best_price = price
                             best_market = market
                             top_clnt = client
                             best_ob = ob
                     else:
                         if best_price < price:
-                            best_price = price * 0.99
+                            best_price = price
                             best_market = market
                             top_clnt = client
                             best_ob = ob
                 else:
-                    best_price = price * 1.01 if side == 'buy' else price * 0.99
+                    best_price = price if side == 'buy' else price
                     best_market = market
                     top_clnt = client
                     best_ob = ob
