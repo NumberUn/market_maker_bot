@@ -112,11 +112,13 @@ class ArbitrageFinder:
     @try_exc_regular
     def check_spread(self, orderbook: dict, side: str, target_profit: float) -> bool:
         if side == 'asks':
-            if (orderbook[side][1][0] - orderbook[side][0][0]) / orderbook[side][0][0] > 0.5 * abs(target_profit):
-                return False
+            if len(orderbook[side]) > 1:
+                if (orderbook[side][1][0] - orderbook[side][0][0]) / orderbook[side][0][0] > 0.5 * abs(target_profit):
+                    return False
         if side == 'bids':
-            if (orderbook[side][0][0] - orderbook[side][1][0]) / orderbook[side][0][0] > 0.5 * abs(target_profit):
-                return False
+            if len(orderbook[side]) > 1:
+                if (orderbook[side][0][0] - orderbook[side][1][0]) / orderbook[side][0][0] > 0.5 * abs(target_profit):
+                    return False
         return True
 
     @try_exc_async
