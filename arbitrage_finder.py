@@ -293,13 +293,13 @@ class ArbitrageFinder:
                     equalizer += 1
                 freq_relative_1 = sum_freq_1 / direction_one['range_len'] * 100
                 freq_relative_2 = sum_freq_2 / direction_two['range_len'] * 100
-                print(F"TARGET PROFIT {direction_one['direction']}:", profit_1, sum_freq_1, f"{freq_relative_1} %")
-                print(F"TARGET PROFIT REVERSED {direction_two['direction']}:", profit_2, sum_freq_2,
+                print(F"TARGET PROFIT {direction}:", profit_1, sum_freq_1, f"{freq_relative_1} %")
+                print(F"TARGET PROFIT REVERSED {reversed_direction}:", profit_2, sum_freq_2,
                       f"{freq_relative_2} %")
                 print()
                 ### Defining of target profit including exchange fees
-                target_profits.update({direction_one['direction']: profit_1 - fees,
-                                       direction_two['direction']: profit_2 - fees})
+                target_profits.update({direction: profit_1 - fees,
+                                       reversed_direction: profit_2 - fees})
         return target_profits
 
     @try_exc_regular
