@@ -159,8 +159,8 @@ class ArbitrageFinder:
                             if age_buy < 0.03:
                                 if age_sell < 0.03:
                                     ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
-                                    if ts_buy < 0.01:
-                                        if ts_sell < 0.01:
+                                    if ts_buy < 0.015:
+                                        if ts_sell < 0.015:
                                             # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
                                             #     continue
                                             poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
