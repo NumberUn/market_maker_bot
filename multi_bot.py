@@ -415,17 +415,21 @@ class MultiBot:
                     best_market = market
                     top_clnt = client
                     best_ob = ob
-        rand_id = self.id_generator()
-        client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
-        price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
-        top_clnt.async_tasks.append(['create_order', {'price': price,
-                                                      'size': size,
-                                                      'side': side,
-                                                      'market': best_market,
-                                                      'client_id': client_id,
-                                                      'hedge': True}])
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id))
+        if top_clnt:
+            rand_id = self.id_generator()
+            client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
+            price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
+            top_clnt.async_tasks.append(['create_order', {'price': price,
+                                                          'size': size,
+                                                          'side': side,
+                                                          'market': best_market,
+                                                          'client_id': client_id,
+                                                          'hedge': True}])
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem,
+                                                       deal, best_ob, mrkt_id))
+        else:
+            print(f"ALERT: {deal} was not hedged")
 
     @try_exc_async
     async def get_resp_report_deal(self, top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id):
