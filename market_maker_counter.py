@@ -115,7 +115,8 @@ class MarketFinder:
         return best_px, worst_px, tick
 
     @try_exc_regular
-    def get_deal_direction(self, exchange_buy, exchange_sell, buy_market, sell_market, sz_coin):
+    def get_deal_direction(self, exchange_buy: str, exchange_sell: str,
+                           buy_market: str, sell_market: str, sz_coin: float):
         poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
         buy_close = False
         sell_close = False
