@@ -158,76 +158,78 @@ class ArbitrageFinder:
                             age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
                             if age_buy < 0.03:
                                 if age_sell < 0.03:
-                            # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
-                            #     continue
-                                    poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
-                                    direction = self.get_deal_direction(poses, ex_buy, ex_sell, buy_mrkt, sell_mrkt)
-                                    buy_px = ob_buy['asks'][0][0]
-                                    sell_px = ob_sell['bids'][0][0]
-                                    raw_profit = (sell_px - buy_px) / buy_px
-                                    profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
-                                    # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                    # print(f"{name} | Profit: {profit}")
-                                    if self.write_ranges:
-                                        name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                        self.append_profit(profit=raw_profit, name=name)
-                                        target_profit = self.target_profits.get(name, 'Not found')
-                                        if target_profit != 'Not found' and target_profit < 0 and direction == 'open':
-                                            continue
-                                        if target_profit == 'Not found':
-                                            target_profit = self.get_target_profit(direction)
-                                    else:
-                                        target_profit = self.get_target_profit(direction)
+                                    ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
+                                    if ts_buy < 0.01:
+                                        if ts_sell < 0.01:
+                                            # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
+                                            #     continue
+                                            poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
+                                            direction = self.get_deal_direction(poses, ex_buy, ex_sell,
+                                                                                buy_mrkt, sell_mrkt)
+                                            buy_px = ob_buy['asks'][0][0]
+                                            sell_px = ob_sell['bids'][0][0]
+                                            raw_profit = (sell_px - buy_px) / buy_px
+                                            profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
+                                            # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                            # print(f"{name} | Profit: {profit}")
+                                            if self.write_ranges:
+                                                name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                                self.append_profit(profit=raw_profit, name=name)
+                                                target_profit = self.target_profits.get(name)
+                                                if target_profit and target_profit < 0 and direction == 'open':
+                                                    continue
+                                                if not target_profit:
+                                                    target_profit = self.get_target_profit(direction)
+                                            else:
+                                                target_profit = self.get_target_profit(direction)
 
-                                        # if buy_trade := client_buy.public_trades.get(buy_mrkt):
-                                        #     if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
-                                        #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {buy_trade}')
-                                        #         print(f'ACTUAL OB {ob_buy}')
-                                        #         print()
-                                        # elif sell_trade := client_sell.public_trades.get(sell_mrkt):
-                                        #     if abs(sell_trade['ts'] - ob_sell['timestamp']) < 0.01:
-                                        #         print(f"TRIGGER: {trigger_exchange}\n{name}\nPROFIT {profit}")
-                                        #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {sell_trade}')
-                                        #         print(f'ACTUAL OB {ob_sell}')
-                                        #         print()
-                                    # profit = raw_profit - fees
-                                    if profit >= target_profit:
+                                                # if buy_trade := client_buy.public_trades.get(buy_mrkt):
+                                                #     if abs(buy_trade['ts'] - ob_buy['timestamp']) < 0.01:
+                                                #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {buy_trade}')
+                                                #         print(f'ACTUAL OB {ob_buy}')
+                                                #         print()
+                                                # elif sell_trade := client_sell.public_trades.get(sell_mrkt):
+                                                #     if abs(sell_trade['ts'] - ob_sell['timestamp']) < 0.01:
+                                                #         print(f"TRIGGER: {trigger_exchange}\n{name}\nPROFIT {profit}")
+                                                #         print(f'LAST TRADE AND ORDERBOOK ON THE MOMENT: {sell_trade}')
+                                                #         print(f'ACTUAL OB {ob_sell}')
+                                                #         print()
+                                            # profit = raw_profit - fees
+                                            if profit >= target_profit:
 
-                                        if gc.isenabled():
-                                            gc.disable()
+                                                if gc.isenabled():
+                                                    gc.disable()
                                         # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                                         # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
                                         # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
                                         # print()
-                                        ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
-                                        # if ts_buy < 0.15:
-                                        #     if ts_sell < 0.15:
+
                                                 # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                                 # print()
-                                        if self.check_spread(ob_buy, 'asks', target_profit):
-                                            if self.check_spread(ob_sell, 'bids', target_profit):
-                                                deal = {'client_buy': client_buy,
-                                                        'client_sell': client_sell,
-                                                        'buy_px': buy_px,
-                                                        'sell_px': sell_px,
-                                                        'buy_sz': ob_buy['asks'][0][1],
-                                                        'sell_sz': ob_sell['bids'][0][1],
-                                                        'buy_mrkt': buy_mrkt,
-                                                        'sell_mrkt': sell_mrkt,
-                                                        'ts_start_counting': now_ts,
-                                                        'ob_buy_own_ts': ob_buy['ts_ms'],
-                                                        'ob_sell_own_ts': ob_sell['ts_ms'],
-                                                        'ob_buy_api_ts': ts_buy,
-                                                        'ob_sell_api_ts': ts_sell,
-                                                        'ex_buy': ex_buy,
-                                                        'ex_sell': ex_sell,
-                                                        'coin': coin,
-                                                        'target_profit': target_profit,
-                                                        'profit': profit,
-                                                        'direction': direction,
-                                                        'trigger_ex': trigger_exchange,
-                                                        'trigger_type': trigger_type}
-                                                await self.multibot.run_arbitrage(deal)
+                                                if self.check_spread(ob_buy, 'asks', target_profit):
+                                                    if self.check_spread(ob_sell, 'bids', target_profit):
+                                                        deal = {'client_buy': client_buy,
+                                                                'client_sell': client_sell,
+                                                                'buy_px': buy_px,
+                                                                'sell_px': sell_px,
+                                                                'buy_sz': ob_buy['asks'][0][1],
+                                                                'sell_sz': ob_sell['bids'][0][1],
+                                                                'buy_mrkt': buy_mrkt,
+                                                                'sell_mrkt': sell_mrkt,
+                                                                'ts_start_counting': now_ts,
+                                                                'ob_buy_own_ts': ob_buy['ts_ms'],
+                                                                'ob_sell_own_ts': ob_sell['ts_ms'],
+                                                                'ob_buy_api_ts': ts_buy,
+                                                                'ob_sell_api_ts': ts_sell,
+                                                                'ex_buy': ex_buy,
+                                                                'ex_sell': ex_sell,
+                                                                'coin': coin,
+                                                                'target_profit': target_profit,
+                                                                'profit': profit,
+                                                                'direction': direction,
+                                                                'trigger_ex': trigger_exchange,
+                                                                'trigger_type': trigger_type}
+                                                        await self.multibot.run_arbitrage(deal)
 
     @staticmethod
     @try_exc_regular
