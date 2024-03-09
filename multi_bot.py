@@ -262,6 +262,8 @@ class MultiBot:
         # pipes = self.get_pipes()
         if self.markets.get('PEPE'):
             self.markets.pop('PEPE')
+        if self.markets.get('PEOPLE'):
+            self.markets.pop('PEOPLE')
         for client in self.clients:
             print(f"{client.EXCHANGE_NAME} started to process")
             # client.pipes = pipes
