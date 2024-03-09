@@ -206,30 +206,30 @@ class ArbitrageFinder:
 
                                                 # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                                 # print()
-                                                if self.check_spread(ob_buy, 'asks', target_profit):
-                                                    if self.check_spread(ob_sell, 'bids', target_profit):
-                                                        deal = {'client_buy': client_buy,
-                                                                'client_sell': client_sell,
-                                                                'buy_px': buy_px,
-                                                                'sell_px': sell_px,
-                                                                'buy_sz': ob_buy['asks'][0][1],
-                                                                'sell_sz': ob_sell['bids'][0][1],
-                                                                'buy_mrkt': buy_mrkt,
-                                                                'sell_mrkt': sell_mrkt,
-                                                                'ts_start_counting': now_ts,
-                                                                'ob_buy_own_ts': ob_buy['ts_ms'],
-                                                                'ob_sell_own_ts': ob_sell['ts_ms'],
-                                                                'ob_buy_api_ts': ts_buy,
-                                                                'ob_sell_api_ts': ts_sell,
-                                                                'ex_buy': ex_buy,
-                                                                'ex_sell': ex_sell,
-                                                                'coin': coin,
-                                                                'target_profit': target_profit,
-                                                                'profit': profit,
-                                                                'direction': direction,
-                                                                'trigger_ex': trigger_exchange,
-                                                                'trigger_type': trigger_type}
-                                                        await self.multibot.run_arbitrage(deal)
+                                                # if self.check_spread(ob_buy, 'asks', target_profit):
+                                                #     if self.check_spread(ob_sell, 'bids', target_profit):
+                                                deal = {'client_buy': client_buy,
+                                                        'client_sell': client_sell,
+                                                        'buy_px': buy_px,
+                                                        'sell_px': sell_px,
+                                                        'buy_sz': ob_buy['asks'][0][1],
+                                                        'sell_sz': ob_sell['bids'][0][1],
+                                                        'buy_mrkt': buy_mrkt,
+                                                        'sell_mrkt': sell_mrkt,
+                                                        'ts_start_counting': now_ts,
+                                                        'ob_buy_own_ts': ob_buy['ts_ms'],
+                                                        'ob_sell_own_ts': ob_sell['ts_ms'],
+                                                        'ob_buy_api_ts': ts_buy,
+                                                        'ob_sell_api_ts': ts_sell,
+                                                        'ex_buy': ex_buy,
+                                                        'ex_sell': ex_sell,
+                                                        'coin': coin,
+                                                        'target_profit': target_profit,
+                                                        'profit': profit,
+                                                        'direction': direction,
+                                                        'trigger_ex': trigger_exchange,
+                                                        'trigger_type': trigger_type}
+                                                await self.multibot.run_arbitrage(deal)
 
     @staticmethod
     @try_exc_regular
