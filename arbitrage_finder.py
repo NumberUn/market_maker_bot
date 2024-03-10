@@ -32,9 +32,9 @@ class ArbitrageFinder:
         self.clients_with_names = clients_with_names
         self.fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
         if self.write_ranges:
-            self.last_record = time.time()
             self.profit_precise = 4
             self.profit_ranges = self.unpack_ranges()
+            self.last_record = self.profit_ranges.get('timestamp', time.time())
             self.target_profits = self.get_all_target_profits()
             print(f"TARGET PROFIT RANGES FOR {(time.time() - self.profit_ranges['timestamp_start']) / 3600} HOURS")
             print(self.target_profits)
@@ -156,8 +156,8 @@ class ArbitrageFinder:
                             if not ob_sell.get('bids') or not ob_sell.get('asks'):
                                 continue
                             age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
-                            if age_buy < 0.1:
-                                if age_sell < 0.1:
+                            if age_buy < 0.3:
+                                if age_sell < 0.3:
                                     ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                                     if ts_buy < 0.06:
                                         if ts_sell < 0.06:
