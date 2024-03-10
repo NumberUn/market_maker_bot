@@ -10,14 +10,6 @@ import uvloop
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-try:
-    with open('ranges.json', 'r') as f:
-        pass
-except Exception as e:
-    # traceback.print_exc()
-    with open('ranges.json', 'w') as f:
-        pass
-
 
 class ArbitrageFinder:
 
@@ -323,6 +315,7 @@ class ArbitrageFinder:
         if now - self.profit_ranges['timestamp_start'] > 3600 * 24:
             with open(f'ranges{str(datetime.now()).split(" ")[0]}.json', 'w') as file:
                 json.dump(self.profit_ranges, file)
+            self.target_profits = self.get_all_target_profits()
             self.profit_ranges = {'timestamp': now, 'timestamp_start': now}
 
     @try_exc_regular
