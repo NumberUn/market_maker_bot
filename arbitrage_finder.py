@@ -156,8 +156,8 @@ class ArbitrageFinder:
                             if not ob_sell.get('bids') or not ob_sell.get('asks'):
                                 continue
                             age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
-                            if age_buy < 0.1:
-                                if age_sell < 0.1:
+                            if age_buy < 0.05:
+                                if age_sell < 0.05:
                                     ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                                     if ts_buy < 0.05:
                                         if ts_sell < 0.05:
@@ -170,8 +170,8 @@ class ArbitrageFinder:
                                             sell_px = ob_sell['bids'][0][0]
                                             raw_profit = (sell_px - buy_px) / buy_px
                                             profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
-                                            # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                            # print(f"{name} | Profit: {profit}")
+                                            # name = f"T:{trigger_exchange}\nB:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                            # print(f"{name} | Profit: {profit}|TSB:{ts_buy}|TSS:{ts_sell}\n")
                                             if self.write_ranges:
                                                 name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                                                 self.append_profit(profit=raw_profit, name=name)
