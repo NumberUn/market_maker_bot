@@ -61,8 +61,7 @@ class MarketFinder:
             return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
             return False
-        # return self.timestamps_filter(ob_buy, ob_sell, now_ts)
-        return True
+        return self.timestamps_filter(ob_buy, ob_sell, now_ts)
 
     @try_exc_regular
     def timestamps_filter(self, ob_buy: dict, ob_sell: dict, now_ts: float) -> bool:
@@ -76,7 +75,7 @@ class MarketFinder:
             ts_sell = now_ts - ob_sell['timestamp']
         else:
             ts_sell = now_ts - ob_sell['timestamp'] / 1000
-        if ts_sell > 0.2 or ts_buy > 0.2 or buy_own_ts_ping > 0.060 or sell_own_ts_ping > 0.060:
+        if ts_sell > 0.3 or ts_buy > 0.3 or buy_own_ts_ping > 0.060 or sell_own_ts_ping > 0.060:
             return False
         return True
 

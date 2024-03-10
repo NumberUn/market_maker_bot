@@ -123,7 +123,7 @@ class ArbitrageFinder:
     @try_exc_regular
     def mm_check(self, coin: str, side: str) -> bool:
         if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
-            if order['side'] == side:
+            if order[1]['side'] == side:
                 return True
         return False
 
