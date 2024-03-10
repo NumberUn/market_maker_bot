@@ -156,8 +156,8 @@ class ArbitrageFinder:
                             if not ob_sell.get('bids') or not ob_sell.get('asks'):
                                 continue
                             age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
-                            if age_buy < 0.05:
-                                if age_sell < 0.05:
+                            if age_buy < 0.1:
+                                if age_sell < 0.1:
                                     ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                                     if ts_buy < 0.05:
                                         if ts_sell < 0.05:
@@ -335,7 +335,8 @@ class ArbitrageFinder:
             range = sorted([[float(x), y] for x, y in self.profit_ranges[direction].items()], reverse=True)
             range_len = sum([x[1] for x in range])
             upd_data = {direction: {'range': range,  # profits dictionary in format key = profit, value = frequency
-                               'range_len': range_len}}  # direction in format B:{exch_buy}|S:{exch_sell}|C:{coin} (str)
+                                    'range_len': range_len}}
+                                # direction in format B:{exch_buy}|S:{exch_sell}|C:{coin} (str)
             directions.update(upd_data)
         return directions
 
