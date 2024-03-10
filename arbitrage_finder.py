@@ -90,11 +90,12 @@ class ArbitrageFinder:
         if isinstance(ob_buy['timestamp'], float):
             ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp']
         else:
-            ts_buy = ob_buy['ts_ms'] - ob_buy['timestamp'] / 1000
+            ts_buy = ob_buy['ts_ms'] - (ob_buy['timestamp'] / 1000)
+
         if isinstance(ob_sell['timestamp'], float):
             ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp']
         else:
-            ts_sell = ob_sell['ts_ms'] - ob_sell['timestamp'] / 1000
+            ts_sell = ob_sell['ts_ms'] - (ob_sell['timestamp'] / 1000)
         return ts_buy, ts_sell
 
     @try_exc_regular
@@ -119,6 +120,13 @@ class ArbitrageFinder:
                     return False
         return True
 
+    @try_exc_regular
+    def mm_check(self, coin: str, side: str) -> bool:
+        if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
+            if order['side'] == side:
+                return True
+        return False
+
     @try_exc_async
     async def count_one_coin(self, coin, trigger_exchange, trigger_side, trigger_type):
         if self.multibot.arbitrage_processing:
@@ -137,6 +145,9 @@ class ArbitrageFinder:
                 client_sell = self.clients_with_names[trigger_exchange]
                 ex_buy = exchange
                 ex_sell = trigger_exchange
+            if self.multibot.market_maker:
+                if self.mm_check(coin, trigger_side):
+                    continue
             if buy_mrkt := client_buy.markets.get(coin):
                 if sell_mrkt := client_sell.markets.get(coin):
                     ob_buy = client_buy.get_orderbook(buy_mrkt)
@@ -268,7 +279,7 @@ class ArbitrageFinder:
             # print(direction_one['direction'], direction_two['direction'])
             # print(sum_profit - fees)
             # print(sum_profit - fees_1)
-            while (direction_one['range'][i][0] + direction_two['range'][i][0]) - 2 * fees >= self.profit_taker:
+            while (direction_one['range'][i][0] + direction_two['range'][i][0]) - 2 * fees >= 0:
                 profit_1 = direction_one['range'][i][0]
                 profit_2 = direction_two['range'][i][0]
                 sum_freq_1 += direction_one['range'][i][1]
@@ -288,8 +299,7 @@ class ArbitrageFinder:
                 freq_relative_1 = sum_freq_1 / direction_one['range_len'] * 100
                 freq_relative_2 = sum_freq_2 / direction_two['range_len'] * 100
                 print(F"TARGET PROFIT {direction}:", profit_1, sum_freq_1, f"{freq_relative_1} %")
-                print(F"TARGET PROFIT REVERSED {reversed_direction}:", profit_2, sum_freq_2,
-                      f"{freq_relative_2} %")
+                print(F"TARGET PROFIT REVERSED {reversed_direction}:", profit_2, sum_freq_2, f"{freq_relative_2} %")
                 print()
                 ### Defining of target profit including exchange fees
                 target_profits.update({direction: profit_1 - fees,
