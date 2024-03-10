@@ -15,7 +15,6 @@ class ArbitrageFinder:
 
     def __init__(self, multibot, markets, clients_with_names, profit_taker, profit_close, state='Bot'):
         self.multibot = multibot
-        self.write_ranges = True
         self.state = state
         self.profit_taker = profit_taker
         self.profit_close = profit_close
@@ -23,6 +22,7 @@ class ArbitrageFinder:
         self.coins = [x for x in markets.keys()]
         self.clients_with_names = clients_with_names
         self.fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
+        self.write_ranges = True
         if self.write_ranges:
             self.profit_precise = 4
             self.profit_ranges = self.unpack_ranges()

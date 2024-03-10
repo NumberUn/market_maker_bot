@@ -1,6 +1,8 @@
 import asyncio
 from core.wrappers import try_exc_regular, try_exc_async
 import time
+import json
+from datetime import datetime
 
 
 class MarketFinder:
@@ -18,6 +20,100 @@ class MarketFinder:
         self.profit_close = self.multibot.profit_close
         self.trade_mode = 'low'  # middle
         self.min_size = self.multibot.min_size
+        self.write_ranges = True
+        if self.write_ranges:
+            self.profit_ranges = self.unpack_ranges()
+            self.target_profits = self.get_all_target_profits()
+
+    @try_exc_regular
+    def get_all_target_profits(self):
+        directions = self.get_coins_profit_ranges()
+        if not directions:
+            return dict()
+        target_profits = dict()
+        for direction in directions.keys():
+            exchange_1 = direction.split(':')[1].split('|')[0]
+            exchange_2 = direction.split(':')[2].split('|')[0]
+            coin = direction.split(':')[-1]
+            reversed_direction = f"B:{exchange_2}|S:{exchange_1}|C:{coin}"
+            if not directions.get(reversed_direction):
+                continue
+            direction_one = directions[direction]
+            direction_two = directions[reversed_direction]
+
+            if exchange_1 not in (self.clients_with_names.keys()) or exchange_2 not in (self.clients_with_names.keys()):
+                continue
+            sum_freq_1 = 0
+            sum_freq_2 = 0
+            if exchange_1 == self.mm_exchange:
+                fees = self.maker_fees[exchange_1] + self.taker_fees[exchange_2]
+            else:
+                fees = self.taker_fees[exchange_1] + self.maker_fees[exchange_2]
+            ### Choosing target profit as particular rate of frequency appearing in whole range of profits
+            i = 0
+            profit_1 = None
+            profit_2 = None
+            # sum_profit = direction_one['range'][i][0] + direction_two['range'][i][0]
+            # print(direction_one['direction'], direction_two['direction'])
+            # print(sum_profit - fees)
+            # print(sum_profit - fees_1)
+            while (direction_one['range'][i][0] + direction_two['range'][i][0]) - fees * 2 >= 0:
+                profit_1 = direction_one['range'][i][0]
+                profit_2 = direction_two['range'][i][0]
+                sum_freq_1 += direction_one['range'][i][1]
+                sum_freq_2 += direction_two['range'][i][1]
+                i += 1
+            if profit_2 != None and profit_1 != None:
+                equalizer = 1
+                while sum_freq_1 > 100 and sum_freq_1 > 2 * sum_freq_2:
+                    profit_1 = direction_one['range'][i - equalizer][0]
+                    sum_freq_1 -= direction_one['range'][i - equalizer + 1][1]
+                    equalizer += 1
+                equalizer = 1
+                while sum_freq_2 > 100 and sum_freq_2 > 2 * sum_freq_1:
+                    profit_2 = direction_two['range'][i - equalizer][0]
+                    sum_freq_2 -= direction_two['range'][i - equalizer + 1][1]
+                    equalizer += 1
+                # freq_relative_1 = sum_freq_1 / direction_one['range_len'] * 100
+                # freq_relative_2 = sum_freq_2 / direction_two['range_len'] * 100
+                # print(F"TARGET PROFIT {direction}:", profit_1, sum_freq_1, f"{freq_relative_1} %")
+                # print(F"TARGET PROFIT REVERSED {reversed_direction}:", profit_2, sum_freq_2, f"{freq_relative_2} %")
+                # print()
+                ### Defining of target profit including exchange fees
+                target_profits.update({direction: profit_1 - fees,
+                                       reversed_direction: profit_2 - fees})
+        return target_profits
+
+    @staticmethod
+    @try_exc_regular
+    def unpack_ranges() -> dict:
+        try:
+            try:
+                with open(f'ranges{str(datetime.now()).split(" ")[0]}.json', 'r') as file:
+                    return json.load(file)
+            except:
+                with open('ranges.json', 'r') as file:
+                    return json.load(file)
+        except Exception:
+            with open('ranges.json', 'w') as file:
+                new = {'timestamp': time.time(), 'timestamp_start': time.time()}
+                json.dump(new, file)
+            return new
+
+    @try_exc_regular
+    def get_coins_profit_ranges(self):
+        directions = dict()
+        for direction in self.profit_ranges.keys():
+            if 'timestamp' in direction:
+                # Passing the timestamp key in profit_ranges dict
+                continue
+            range = sorted([[float(x), y] for x, y in self.profit_ranges[direction].items()], reverse=True)
+            range_len = sum([x[1] for x in range])
+            upd_data = {direction: {'range': range,  # profits dictionary in format key = profit, value = frequency
+                                    'range_len': range_len}}
+                                # direction in format B:{exch_buy}|S:{exch_sell}|C:{coin} (str)
+            directions.update(upd_data)
+        return directions
 
     def get_active_deal(self, coin):
         if order := self.multibot.open_orders.get(coin + '-' + self.multibot.mm_exchange):
@@ -142,8 +238,10 @@ class MarketFinder:
             return self.profit_close
 
     @try_exc_regular
-    def get_target_profit(self, direction):
-        target_profit = self.count_direction_profit(direction)
+    def get_target_profit(self, name, direction):
+        target_profit = self.target_profits.get(name)
+        if not target_profit:
+            target_profit = self.count_direction_profit(direction)
         return target_profit
 
     @try_exc_async
@@ -179,7 +277,10 @@ class MarketFinder:
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         sz_coin = max_sz_usd / best_px
                         direction, sz_coin = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], sz_coin)
-                        target_profit = self.get_target_profit(direction)
+                        name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                        target_profit = self.get_target_profit(name, direction)
+                        if target_profit and target_profit < 0 and direction == 'open':
+                            continue
                         zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees - target_profit)
                         pot_deal = {'fees': fees, 'sz_coin': sz_coin, 'direction': direction, 'tick': tick}
                         if zero_profit_buy_px >= worst_px:
@@ -202,7 +303,10 @@ class MarketFinder:
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         sz_coin = max_sz_usd / best_px
                         direction, sz_coin = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], sz_coin)
-                        target_profit = self.get_target_profit(direction)
+                        name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                        target_profit = self.get_target_profit(name, direction)
+                        if target_profit and target_profit < 0 and direction == 'open':
+                            continue
                         zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees + target_profit)
                         pot_deal = {'fees': fees, 'sz_coin': sz_coin, 'direction': direction, 'tick': tick}
                         if zero_profit_sell_px <= worst_px:
