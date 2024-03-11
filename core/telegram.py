@@ -36,11 +36,11 @@ class Telegram:
         message_data = {"chat_id": tg_group_obj['chat_id'], "parse_mode": "HTML",
                         "text": f"<pre>ENV: {self.env}\n{str(message)}</pre>"}
         try:
-            r = requests.post(url, json=message_data)
-            return r.json()
+            # r = requests.post(url, json=message_data)
+            # return r.json()
             #OPTION 1
-            # loop = asyncio.get_event_loop()
-            # loop.create_task(self.async_send_message(url, message_data))
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.async_send_message(url, message_data))
         except Exception as e:
             print(f'TELEGRAM MESSAGE NOT SENT:')
             traceback.print_exc()

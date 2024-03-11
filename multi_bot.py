@@ -147,8 +147,8 @@ class MultiBot:
                     'client_id': client_id, 'hedge': True}
         sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
                      'client_id': client_id, 'hedge': True}
-        deal['client_buy'].async_tasks.append(['create_order', buy_deal])
-        deal['client_sell'].async_tasks.append(['create_order', sell_deal])
+        deal['client_buy'].async_tasks.insert(0, ['create_order', buy_deal])
+        deal['client_sell'].async_tasks.insert(0, ['create_order', sell_deal])
         ts_send = time.time()
         await asyncio.sleep(self.deal_pause)
         gc.enable()
@@ -421,7 +421,7 @@ class MultiBot:
             rand_id = self.id_generator()
             client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
             price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
-            top_clnt.async_tasks.append(['create_order', {'price': price,
+            top_clnt.async_tasks.insert(0, ['create_order', {'price': price,
                                                           'size': size,
                                                           'side': side,
                                                           'market': best_market,
