@@ -422,11 +422,11 @@ class MultiBot:
             client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
             price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
             top_clnt.async_tasks.insert(0, ['create_order', {'price': price,
-                                                          'size': size,
-                                                          'side': side,
-                                                          'market': best_market,
-                                                          'client_id': client_id,
-                                                          'hedge': True}])
+                                                             'size': size,
+                                                             'side': side,
+                                                             'market': best_market,
+                                                             'client_id': client_id,
+                                                             'hedge': True}])
             loop = asyncio.get_event_loop()
             loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem,
                                                        deal, best_ob, mrkt_id))
