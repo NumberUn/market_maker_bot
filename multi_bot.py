@@ -442,12 +442,12 @@ class MultiBot:
             top_clnt.order_loop.create_task(top_clnt.create_fast_order(price, size, side, best_market, client_id))
             loop = asyncio.get_event_loop()
             loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem,
-                                                       deal, best_ob, mrkt_id))
+                                                       deal, best_ob, mrkt_id, price))
         else:
             print(f"ALERT: {deal} was not hedged")
 
     @try_exc_async
-    async def get_resp_report_deal(self, top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id):
+    async def get_resp_report_deal(self, top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id, limit_px):
         await asyncio.sleep(0.02)
         self.requests_in_progress.update({mrkt_id: False})
         await asyncio.sleep(0.2)
@@ -457,7 +457,7 @@ class MultiBot:
             print(f"STORED DEAL: {deal_mem}")
             print(f"DUMP DEAL: {dump_deal_mem}")
             top_clnt.responses.pop(client_id)
-            results = self.sort_deal_response_data(deal, resp, best_ob, deal_mem)
+            results = self.sort_deal_response_data(deal, resp, best_ob, deal_mem, limit_px)
             self.create_and_send_deal_report_message(results)
             return
         self.telegram.send_message(f"ALERT! TAKER DEAL WAS NOT PLACED\n{deal}", TG_Groups.MainGroup)
@@ -489,7 +489,7 @@ class MultiBot:
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_regular
-    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict, deal_mem) -> dict:
+    def sort_deal_response_data(self, maker_deal: dict, taker_deal: dict, taker_ob: dict, deal_mem, limit_px) -> dict:
         results = dict()
         last_upd = deal_mem[1]['last_update'] if deal_mem else 0
         target_price = deal_mem[1]['target'] if deal_mem else None
@@ -512,6 +512,7 @@ class MultiBot:
                         'maker size': maker_deal['size'],
                         'taker price': taker_deal['price'],
                         'target taker price': target_price,
+                        'limit taker price': limit_px,
                         'taker size': taker_deal['size'],
                         'taker fee': round(self.clients_with_names[taker_deal['exchange_name']].taker_fee, 5),
                         'maker fee': round(self.clients_with_names[self.mm_exchange].maker_fee, 5)})
