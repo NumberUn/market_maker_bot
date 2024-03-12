@@ -150,13 +150,15 @@ class MarketFinder:
         return False
 
     @try_exc_regular
-    def check_orderbooks(self, ob_buy: dict, ob_sell: dict, now_ts: float) -> bool:
+    def check_orderbooks(self, ob_buy: dict, ob_sell: dict, now_ts: float, active_deal: dict) -> bool:
         if not ob_buy or not ob_sell:
             return False
         if not ob_buy.get('bids') or not ob_buy.get('asks'):
             return False
         if not ob_sell.get('bids') or not ob_sell.get('asks'):
             return False
+        if active_deal:
+            return True
         return self.timestamps_filter(ob_buy, ob_sell, now_ts)
 
     @try_exc_regular
@@ -259,7 +261,7 @@ class MarketFinder:
                     continue
                 ob_buy = client_buy.get_orderbook(mrkt['buy'])
                 ob_sell = client_sell.get_orderbook(mrkt['sell'])
-                if not self.check_orderbooks(ob_buy, ob_sell, now_ts):
+                if not self.check_orderbooks(ob_buy, ob_sell, now_ts, active_deal):
                     # print(f"ORDERBOOKS FAILURE: {coin}")
                     continue
                 counts += 1
