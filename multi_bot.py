@@ -376,6 +376,9 @@ class MultiBot:
         client_id = f'makerxxx{mm_client.EXCHANGE_NAME}xxx' + coin + 'xxx' + rand_id
         size = self.precise_size(coin, deal['size'])
         price, size = mm_client.fit_sizes(deal['price'], size, market)
+        if size <= 0:
+            self.requests_in_progress.update({market_id: False})
+            return
         deal.update({'market': market,
                      'client_id': client_id,
                      'price': price,
