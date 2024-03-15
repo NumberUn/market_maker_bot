@@ -148,16 +148,20 @@ class MultiBot:
         # buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
         #             'client_id': client_id, 'hedge': True}
         # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
-        #              'client_id': client_id, 'hedge': True}
+        #              'client_id':§§§§§§§§§§ client_id, 'hedge': True}
         # deal['client_buy'].async_tasks.insert(0, ['create_order', buy_deal])
         # deal['client_sell'].async_tasks.insert(0, ['create_order', sell_deal])
-        deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(deal['buy_px'],
-                                                                                       precised_sz,
+        tick_buy = deal['client_buy'].instruments[deal['buy_mrkt']]['tick_size']
+        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] + 5 * tick_buy, precised_sz, deal['buy_mrkt'])
+        deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
+                                                                                       buy_size,
                                                                                        'buy',
                                                                                        deal['buy_mrkt'],
                                                                                        client_id))
-        deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(deal['sell_px'],
-                                                                                         precised_sz,
+        tick_sell = deal['client_sell'].instruments[deal['sell_mrkt']]['tick_size']
+        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] - 5 * tick_sell, precised_sz, deal['sell_mrkt'])
+        deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
+                                                                                         sell_size,
                                                                                          'sell',
                                                                                          deal['sell_mrkt'],
                                                                                          client_id))
@@ -412,23 +416,24 @@ class MultiBot:
                 continue
             market = client.markets.get(deal['coin'])
             if market and client.instruments[market]['min_size'] <= deal['size']:
+                tick = client.instruments[market]['tick_size']
                 ob = client.get_orderbook(market)
                 price = ob['asks'][self.limit_order_shift][0] if side == 'buy' else ob['bids'][self.limit_order_shift][0]
                 if best_price:
                     if side == 'buy':
                         if best_price > price:
-                            best_price = price
+                            best_price = price + 5 * tick
                             best_market = market
                             top_clnt = client
                             best_ob = ob
                     else:
                         if best_price < price:
-                            best_price = price
+                            best_price = price - 5 * tick
                             best_market = market
                             top_clnt = client
                             best_ob = ob
                 else:
-                    best_price = price if side == 'buy' else price
+                    best_price = price + 5 * tick if side == 'buy' else price - 5 * tick
                     best_market = market
                     top_clnt = client
                     best_ob = ob
@@ -446,6 +451,30 @@ class MultiBot:
             loop = asyncio.get_event_loop()
             loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem,
                                                        deal, best_ob, mrkt_id, price))
+            # self.db.save_arbitrage_possibilities(deal, size, ts_send, ap_id, buy_id, sell_id, inner_ping,
+            #                                      self.env)
+            # self.db.save_order(order_id=buy_id,
+            #                    deal=deal,
+            #                    ap_id=ap_id,
+            #                    resp=resp_buy,
+            #                    side='buy',
+            #                    size=precised_sz,
+            #                    ts_sent=ts_send,
+            #                    env=self.env,
+            #                    oneway_ping_orderbook=oneway_ping_orderbook_buy,
+            #                    oneway_ping_order=oneway_ping_order_buy,
+            #                    inner_ping=inner_ping_buy)
+            # self.db.save_order(order_id=sell_id,
+            #                    deal=deal,
+            #                    ap_id=ap_id,
+            #                    resp=resp_sell,
+            #                    side='sell',
+            #                    size=precised_sz,
+            #                    ts_sent=ts_send,
+            #                    env=self.env,
+            #                    oneway_ping_orderbook=oneway_ping_orderbook_sell,
+            #                    oneway_ping_order=oneway_ping_order_sell,
+            #                    inner_ping=inner_ping_sell)
         else:
             print(f"ALERT: {deal} was not hedged")
 
