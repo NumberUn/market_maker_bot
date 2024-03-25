@@ -121,13 +121,18 @@ class MultiBot:
     @try_exc_async
     async def main_process(self):
         await self.launch()
+        count = 0
         while True:
+            if count == 5:
+                count = 0
+                await self.update_all_av_balances()
             await self.rabbit.setup_mq()
             tasks = [self._loop.create_task(self.__check_order_status()),
                      self._loop.create_task(self.rabbit.send_messages())]
             await asyncio.gather(*tasks, return_exceptions=True)
             await asyncio.sleep(5)
             await self.rabbit.mq.close()
+            count += 1
 
     @try_exc_async
     async def run_arbitrage(self, deal):
