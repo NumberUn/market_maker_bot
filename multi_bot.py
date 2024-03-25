@@ -378,7 +378,7 @@ class MultiBot:
         market_id = coin + '-' + self.mm_exchange
         mm_client = self.clients_with_names[self.mm_exchange]
         market = mm_client.markets[coin]
-        rand_id = self.id_generator()
+        rand_id = self.id_generator(size=12)
         client_id = f'makerxxx{mm_client.EXCHANGE_NAME}xxx' + coin + 'xxx' + rand_id
         size = self.precise_size(coin, deal['size'])
         price, size = mm_client.fit_sizes(deal['price'], size, market)
