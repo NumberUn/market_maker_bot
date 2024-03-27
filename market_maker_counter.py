@@ -281,7 +281,7 @@ class MarketFinder:
                         direction, sz_coin = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], sz_coin)
                         name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                         target_profit = self.get_target_profit(name, direction)
-                        if target_profit and target_profit < 0 and direction == 'open':
+                        if target_profit and target_profit < 0 and direction != 'close':
                             continue
                         zero_profit_buy_px = ob_sell['bids'][self.ob_level][0] * (1 - fees - target_profit)
                         pot_deal = {'fees': fees, 'sz_coin': sz_coin, 'direction': direction, 'tick': tick}
@@ -307,7 +307,7 @@ class MarketFinder:
                         direction, sz_coin = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], sz_coin)
                         name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                         target_profit = self.get_target_profit(name, direction)
-                        if target_profit and target_profit < 0 and direction == 'open':
+                        if target_profit and target_profit < 0 and direction != 'close':
                             continue
                         zero_profit_sell_px = ob_buy['asks'][self.ob_level][0] * (1 + fees + target_profit)
                         pot_deal = {'fees': fees, 'sz_coin': sz_coin, 'direction': direction, 'tick': tick}
