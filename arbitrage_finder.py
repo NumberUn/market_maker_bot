@@ -179,7 +179,7 @@ class ArbitrageFinder:
                                                 name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                                                 self.append_profit(profit=raw_profit, name=name)
                                                 target_profit = self.target_profits.get(name)
-                                                if target_profit and target_profit < 0 and direction == 'open':
+                                                if target_profit and target_profit < 0 and direction != 'close':
                                                     continue
                                                 if not target_profit:
                                                     target_profit = self.get_target_profit(direction)

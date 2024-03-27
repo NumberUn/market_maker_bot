@@ -125,7 +125,7 @@ class MultiBot:
         while True:
             if count == 5:
                 count = 0
-                await self.update_all_av_balances()
+                self.update_all_av_balances()
             await self.rabbit.setup_mq()
             tasks = [self._loop.create_task(self.__check_order_status()),
                      self._loop.create_task(self.rabbit.send_messages())]
@@ -157,14 +157,14 @@ class MultiBot:
         # deal['client_buy'].async_tasks.insert(0, ['create_order', buy_deal])
         # deal['client_sell'].async_tasks.insert(0, ['create_order', sell_deal])
         tick_buy = deal['client_buy'].instruments[deal['buy_mrkt']]['tick_size']
-        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] - tick_buy, precised_sz, deal['buy_mrkt'])
+        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] + 5 * tick_buy, precised_sz, deal['buy_mrkt'])
         deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
                                                                                        buy_size,
                                                                                        'buy',
                                                                                        deal['buy_mrkt'],
                                                                                        client_id))
         tick_sell = deal['client_sell'].instruments[deal['sell_mrkt']]['tick_size']
-        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] + tick_sell, precised_sz, deal['sell_mrkt'])
+        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] - 5 * tick_sell, precised_sz, deal['sell_mrkt'])
         deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
                                                                                          sell_size,
                                                                                          'sell',
@@ -429,7 +429,7 @@ class MultiBot:
                 if best_price:
                     if side == 'buy':
                         if best_price > price:
-                            best_price = price - 5 * tick
+                            best_price = price + 5 * tick
                             best_market = market
                             top_clnt = client
                             best_ob = ob
