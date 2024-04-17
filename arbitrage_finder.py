@@ -169,6 +169,8 @@ class ArbitrageFinder:
                                             poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                                             direction = self.get_deal_direction(poses, ex_buy, ex_sell,
                                                                                 buy_mrkt, sell_mrkt)
+                                            if direction == 'open':
+                                                continue
                                             buy_px = ob_buy['asks'][0][0]
                                             sell_px = ob_sell['bids'][0][0]
                                             raw_profit = (sell_px - buy_px) / buy_px

@@ -279,6 +279,8 @@ class MarketFinder:
                         fees = self.maker_fees[ex_buy] + self.taker_fees[ex_sell]
                         sz_coin = max_sz_usd / best_px
                         direction, sz_coin = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], sz_coin)
+                        if direction == 'open':
+                            continue
                         name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                         target_profit = self.get_target_profit(name, direction)
                         if target_profit and target_profit < 0 and direction != 'close':
@@ -305,6 +307,8 @@ class MarketFinder:
                         fees = self.maker_fees[ex_sell] + self.taker_fees[ex_buy]
                         sz_coin = max_sz_usd / best_px
                         direction, sz_coin = self.get_deal_direction(ex_buy, ex_sell, mrkt['buy'], mrkt['sell'], sz_coin)
+                        if direction == 'open':
+                            continue
                         name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                         target_profit = self.get_target_profit(name, direction)
                         if target_profit and target_profit < 0 and direction != 'close':

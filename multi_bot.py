@@ -8,6 +8,7 @@ import math
 
 from market_maker_counter import MarketFinder
 from arbitrage_finder import ArbitrageFinder
+from arbitrage_finder_parse import ArbitrageFinderParse
 from clients.core.all_clients import ALL_CLIENTS
 from clients_markets_data import ClientsMarketData
 from core.database import DB
@@ -41,7 +42,7 @@ class MultiBot:
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
                  'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size',
-                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing']
+                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing', 'parser_mode']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -56,7 +57,6 @@ class MultiBot:
         self.instance_markets_amount = int(config['SETTINGS']['INSTANCE_MARKETS_AMOUNT'])
         self.launch_fields = ['env', 'target_profit', 'fee_exchange_1', 'fee_exchange_2', 'shift', 'orders_delay',
                               'max_order_usd', 'max_leverage', 'shift_use_flag']
-        os.nice(-1)
         # ORDER CONFIGS
         self.max_order_size_usd = int(self.setts['ORDER_SIZE'])
         self.min_size = int(self.setts['MIN_ORDER_SIZE'])
@@ -68,6 +68,7 @@ class MultiBot:
         self.deal_pause = float(self.setts['DEALS_PAUSE'])
         self.exchanges = self.setts['EXCHANGES'].split(',')
         self.mm_exchange = self.setts["MM_EXCHANGE"]
+        self.parser_mode = True if self.setts['PARSER'] == '1' else False
         self.clients = []
         self.telegram = Telegram()
         for exchange in self.exchanges:
@@ -280,6 +281,8 @@ class MultiBot:
             mm_finder = MarketFinder(self.markets, self.clients_with_names, self)
         if self.arbitrage:
             ap_finder = ArbitrageFinder(self, self.markets, self.clients_with_names, self.profit_open, self.profit_close)
+        if self.parser_mode:
+            ap_finder = ArbitrageFinderParse()
         # pipes = self.get_pipes()
         if self.markets.get('PEPE'):
             self.markets.pop('PEPE')
