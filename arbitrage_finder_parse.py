@@ -8,6 +8,18 @@ from core.ap_class import AP
 import gc
 import uvloop
 from core.telegram import Telegram, TG_Groups
+import csv
+
+try:
+    with open('arbitrage_possibilities.csv', 'r') as file:
+        pass
+except:
+    with open('arbitrage_possibilities.csv', 'w') as file:
+        writer = csv.writer(file)
+        writer.writerow(['ENV', 'BUY_PX', 'SELL_PX', 'BUY_SZ', 'SELL_SZ', 'BUY_MRKT', 'SELL_MRKT',
+                         'TS_START_COUNTING', 'OB_BUY_OWN_TS', 'OB_SELL_OWN_TS', 'EX_BUY', 'EX_SELL',
+                         'COIN', 'TARGET_PROFIT', 'EXPECT_PROFIT', 'TRIGGER_EX', 'TRIGGER_TYPE'])
+
 
 telegram = Telegram()
 
@@ -115,10 +127,10 @@ class ArbitrageFinderParse:
                         # profit = raw_profit - fees
                             if profit >= target_profit:
 
-                                # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                                # print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
-                                # print()
+                                name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                                print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
+                                print()
 
                                     # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                     # print()
@@ -145,5 +157,11 @@ class ArbitrageFinderParse:
                                     'profit': profit,
                                     'trigger_ex': trigger_exchange,
                                     'trigger_type': trigger_type}
-                                message = '\n'.join([x.upper() + ': ' + str(y) for x, y in deal.items()])
-                                telegram.send_message(message, TG_Groups.MainGroup)
+                                new_line = list(deal.values())
+                                new_line.insert(0, 'MULTIBOT_TEST_TOKYO')
+                                with open('arbitrage_possibilities.csv', 'a', newline='') as file_to_append:
+                                    writer_inside = csv.writer(file_to_append)
+                                    # Write a single row
+                                    writer_inside.writerow(new_line)
+                                # message = '\n'.join([x.upper() + ': ' + str(y) for x, y in deal.items()])
+                                # telegram.send_message(message, TG_Groups.MainGroup)
