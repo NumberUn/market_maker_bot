@@ -126,7 +126,7 @@ class MultiBot:
         while True:
             if count == 5:
                 count = 0
-                self.update_all_av_balances()
+                await self.update_all_av_balances()
             await self.rabbit.setup_mq()
             tasks = [self._loop.create_task(self.__check_order_status()),
                      self._loop.create_task(self.rabbit.send_messages())]
