@@ -686,6 +686,8 @@ class MultiBot:
 
 if __name__ == '__main__':
     bot = MultiBot()
-    if not bot.parser_mode:
-        bot.run_main_process()
+    if bot.parser_mode:
+        while True:
+            time.sleep(1)
+    bot.run_main_process()
     # asyncio.run(bot.main_process())
