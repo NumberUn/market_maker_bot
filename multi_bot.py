@@ -282,7 +282,7 @@ class MultiBot:
         if self.arbitrage:
             ap_finder = ArbitrageFinder(self, self.markets, self.clients_with_names, self.profit_open, self.profit_close)
         if self.parser_mode:
-            ap_finder = ArbitrageFinderParse()
+            ap_finder = ArbitrageFinderParse(self.markets, self.clients_with_names, self.profit_open, self.profit_close)
         # pipes = self.get_pipes()
         if self.markets.get('PEPE'):
             self.markets.pop('PEPE')
