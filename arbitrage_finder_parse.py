@@ -7,6 +7,9 @@ import traceback
 from core.ap_class import AP
 import gc
 import uvloop
+from core.telegram import Telegram, TG_Groups
+
+telegram = Telegram()
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -112,32 +115,35 @@ class ArbitrageFinderParse:
                         # profit = raw_profit - fees
                             if profit >= target_profit:
 
-                                name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                                print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
-                                print()
+                                # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                                # print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
+                                # print()
 
                                     # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                     # print()
                                     # if self.check_spread(ob_buy, 'asks', target_profit):
                                     #     if self.check_spread(ob_sell, 'bids', target_profit):
-                                deal = {'client_buy': client_buy,
-                                        'client_sell': client_sell,
-                                        'buy_px': buy_px,
-                                        'sell_px': sell_px,
-                                        'buy_sz': ob_buy['asks'][0][1],
-                                        'sell_sz': ob_sell['bids'][0][1],
-                                        'buy_mrkt': buy_mrkt,
-                                        'sell_mrkt': sell_mrkt,
-                                        'ts_start_counting': now_ts,
-                                        'ob_buy_own_ts': ob_buy['ts_ms'],
-                                        'ob_sell_own_ts': ob_sell['ts_ms'],
-                                        # 'ob_buy_api_ts': ts_buy,
-                                        # 'ob_sell_api_ts': ts_sell,
-                                        'ex_buy': ex_buy,
-                                        'ex_sell': ex_sell,
-                                        'coin': coin,
-                                        'target_profit': target_profit,
-                                        'profit': profit,
-                                        'trigger_ex': trigger_exchange,
-                                        'trigger_type': trigger_type}
+                                deal = {
+                                    # 'client_buy': client_buy,
+                                    # 'client_sell': client_sell,
+                                    'buy_px': buy_px,
+                                    'sell_px': sell_px,
+                                    'buy_sz': ob_buy['asks'][0][1],
+                                    'sell_sz': ob_sell['bids'][0][1],
+                                    'buy_mrkt': buy_mrkt,
+                                    'sell_mrkt': sell_mrkt,
+                                    'ts_start_counting': now_ts,
+                                    'ob_buy_own_ts': ob_buy['ts_ms'],
+                                    'ob_sell_own_ts': ob_sell['ts_ms'],
+                                    # 'ob_buy_api_ts': ts_buy,
+                                    # 'ob_sell_api_ts': ts_sell,
+                                    'ex_buy': ex_buy,
+                                    'ex_sell': ex_sell,
+                                    'coin': coin,
+                                    'target_profit': target_profit,
+                                    'profit': profit,
+                                    'trigger_ex': trigger_exchange,
+                                    'trigger_type': trigger_type}
+                                message = '\n'.join([x.upper() + ': ' + str(y) for x, y in deal.items()])
+                                telegram.send_message(message, TG_Groups.MainGroup)
