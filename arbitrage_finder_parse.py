@@ -80,6 +80,8 @@ class ArbitrageFinderParse:
     @try_exc_async
     async def count_one_coin(self, coin, trigger_exchange, trigger_side, trigger_type):
         now_ts = time.time()
+        if trigger_exchange == 'BITKUB':
+            print('BITKUB COUNTING')
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
                 continue
@@ -127,15 +129,20 @@ class ArbitrageFinderParse:
                         # profit = raw_profit - fees
                             if profit >= target_profit:
 
-                                name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                                print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
-                                print()
+                                # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                                # print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
+                                # print()
 
                                     # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                     # print()
                                     # if self.check_spread(ob_buy, 'asks', target_profit):
                                     #     if self.check_spread(ob_sell, 'bids', target_profit):
+                                thb_rate = 0
+                                if client_buy.EXCHANGE_NAME == 'BITKUB':
+                                    thb_rate = client_buy.get_thb_rate()
+                                elif client_sell.EXCHANGE_NAME == 'BITKUB':
+                                    thb_rate = client_sell.get_thb_rate()
                                 deal = {
                                     # 'client_buy': client_buy,
                                     # 'client_sell': client_sell,
@@ -156,7 +163,8 @@ class ArbitrageFinderParse:
                                     'target_profit': target_profit,
                                     'profit': profit,
                                     'trigger_ex': trigger_exchange,
-                                    'trigger_type': trigger_type}
+                                    'trigger_type': trigger_type,
+                                    'thb_rate': thb_rate}
                                 new_line = list(deal.values())
                                 new_line.insert(0, 'MULTIBOT_TEST_TOKYO')
                                 with open('arbitrage_possibilities.csv', 'a', newline='') as file_to_append:
