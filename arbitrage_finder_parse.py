@@ -80,8 +80,6 @@ class ArbitrageFinderParse:
     @try_exc_async
     async def count_one_coin(self, coin, trigger_exchange, trigger_side, trigger_type):
         now_ts = time.time()
-        if trigger_exchange == 'BITKUB':
-            print('BITKUB COUNTING')
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
                 continue
@@ -128,11 +126,11 @@ class ArbitrageFinderParse:
                             #         print()
                         # profit = raw_profit - fees
                             if profit >= target_profit:
-
-                                # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                                # print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
-                                # print()
+                                if trigger_exchange == 'BITKUB':
+                                    name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                    print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                                    print(f"BUY PX: {buy_px} | SELL PX: {sell_px}")
+                                    print()
 
                                     # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                     # print()
