@@ -145,6 +145,7 @@ class MultiBot:
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
+            print(f'{precised_sz=} deal is not tradable because of balance')
             gc.enable()
             return
         self.arbitrage_processing = True
