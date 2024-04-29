@@ -22,7 +22,7 @@ class ArbitrageFinder:
         self.coins = [x for x in markets.keys()]
         self.clients_with_names = clients_with_names
         self.fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
-        self.write_ranges = True
+        self.write_ranges = False
         if self.write_ranges:
             self.profit_precise = 4
             self.profit_ranges = self.unpack_ranges()
@@ -234,7 +234,8 @@ class ArbitrageFinder:
                                                         'direction': direction,
                                                         'trigger_ex': trigger_exchange,
                                                         'trigger_type': trigger_type}
-                                                await self.multibot.run_arbitrage(deal)
+                                                print(deal)
+                                                # await self.multibot.run_arbitrage(deal)
 
     @staticmethod
     @try_exc_regular
