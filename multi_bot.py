@@ -137,16 +137,16 @@ class MultiBot:
 
     @try_exc_async
     async def run_arbitrage(self, deal):
-        print(deal)
+        # print(deal)
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
-            print(f'{deal["coin"]} deal is not tradable because of balance')
+            # print(f'{deal["coin"]} deal is not tradable because of balance')
             gc.enable()
             return
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
         precised_sz = self.precise_size(deal['coin'], unprecised_sz)
         if precised_sz == 0:
-            print(f'{precised_sz=} deal is not tradable because of balance')
+            # print(f'{precised_sz=} deal is not tradable because of balance')
             gc.enable()
             return
         self.arbitrage_processing = True
