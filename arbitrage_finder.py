@@ -164,8 +164,8 @@ class ArbitrageFinder:
                                     ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                                     if ts_buy < 0.3:
                                         if ts_sell < 0.3:
-                                            if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
-                                                continue
+                                            # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
+                                            #     continue
                                             poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                                             direction = self.get_deal_direction(poses, ex_buy, ex_sell,
                                                                                 buy_mrkt, sell_mrkt)
