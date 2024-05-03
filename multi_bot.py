@@ -137,7 +137,6 @@ class MultiBot:
 
     @try_exc_async
     async def run_arbitrage(self, deal):
-        # print(deal)
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
             # print(f'{deal["coin"]} deal is not tradable because of balance')
@@ -149,6 +148,7 @@ class MultiBot:
             # print(f'{precised_sz=} deal is not tradable because of balance')
             gc.enable()
             return
+        print(f"ARBITRAGE PROCESSING STARTED:\n{deal=}")
         self.arbitrage_processing = True
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
