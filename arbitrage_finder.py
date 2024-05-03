@@ -158,14 +158,14 @@ class ArbitrageFinder:
                                 continue
                             if not ob_sell.get('bids') or not ob_sell.get('asks'):
                                 continue
-                            age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
+                            # age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
                             # if age_buy < 3:
                             #     if age_sell < 3:
                             ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
-                            # if ts_buy < 3:
-                            #     if ts_sell < 3:
-                            # if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
-                            #     continue
+                            #         if ts_buy < 3:
+                            #             if ts_sell < 3:
+                            #             if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
+                            #                 continue
                             poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                             direction = self.get_deal_direction(poses, ex_buy, ex_sell,
                                                                 buy_mrkt, sell_mrkt)
@@ -173,9 +173,9 @@ class ArbitrageFinder:
                             sell_px = ob_sell['bids'][0][0]
                             raw_profit = (sell_px - buy_px) / buy_px
                             profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
-                            name = f"T:{trigger_exchange}\nB:{ex_buy}|S:{ex_sell}|C:{coin}"
-                            print(f"{name} | Profit: {profit}|TSB:{ts_buy}|TSS:{ts_sell}")
-                            print(f"ASB:{age_buy}|ASS:{age_sell}\n")
+                            # name = f"T:{trigger_exchange}\nB:{ex_buy}|S:{ex_sell}|C:{coin}"
+                            # print(f"{name} | Profit: {profit}|TSB:{ts_buy}|TSS:{ts_sell}")
+                            # print(f"ASB:{age_buy}|ASS:{age_sell}\n")
                             if self.write_ranges:
                                 name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
                                 self.append_profit(profit=raw_profit, name=name)
@@ -203,10 +203,10 @@ class ArbitrageFinder:
 
                                 if gc.isenabled():
                                     gc.disable()
-                                # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                                # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
-                                # print()
+                                name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                                print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
+                                print()
 
                                 # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                 # print()
