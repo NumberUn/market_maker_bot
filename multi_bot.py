@@ -139,7 +139,13 @@ class MultiBot:
     async def run_arbitrage(self, deal):
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
-            # print(f'{deal["coin"]} deal is not tradable because of balance')
+            av_bal_buy = self._get_available_balance(deal['ex_buy'], deal['buy_mrkt'], deal['direction'])
+            av_bal_sell = self._get_available_balance(deal['ex_sell'], deal['sell_mrkt'], deal['direction'])
+            min_size_buy = deal['client_buy'].instruments[deal['buy_mrkt']]['min_size']
+            min_size_sell = deal['client_sell'].instruments[deal['sell_mrkt']]['min_size']
+            print(f'{deal["coin"]} deal is not tradable because of balance')
+            print(f"BuyMS:{min_size_buy * deal['buy_px']}|AvBalBuy: {av_bal_buy}")
+            print(f"SellMS:{min_size_sell * deal['buy_px']}|AvBalSell: {av_bal_sell}")
             gc.enable()
             return
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
