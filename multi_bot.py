@@ -122,6 +122,7 @@ class MultiBot:
     @try_exc_async
     async def main_process(self):
         await self.launch()
+        print(f"MULTIBOT LAUNCH DONE")
         count = 0
         while True:
             if count == 5:
