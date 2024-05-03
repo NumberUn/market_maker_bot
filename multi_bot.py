@@ -167,15 +167,15 @@ class MultiBot:
         #              'client_id':§§§§§§§§§§ client_id, 'hedge': True}
         # deal['client_buy'].async_tasks.insert(0, ['create_order', buy_deal])
         # deal['client_sell'].async_tasks.insert(0, ['create_order', sell_deal])
-        tick_buy = deal['client_buy'].instruments[deal['buy_mrkt']]['tick_size']
-        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] + 5 * tick_buy, precised_sz, deal['buy_mrkt'])
+        # tick_buy = deal['client_buy'].instruments[deal['buy_mrkt']]['tick_size']
+        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
         deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
                                                                                        buy_size,
                                                                                        'buy',
                                                                                        deal['buy_mrkt'],
                                                                                        client_id))
-        tick_sell = deal['client_sell'].instruments[deal['sell_mrkt']]['tick_size']
-        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] - 5 * tick_sell, precised_sz, deal['sell_mrkt'])
+        # tick_sell = deal['client_sell'].instruments[deal['sell_mrkt']]['tick_size']
+        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.999, precised_sz, deal['sell_mrkt'])
         deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
                                                                                          sell_size,
                                                                                          'sell',
