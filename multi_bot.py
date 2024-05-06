@@ -157,6 +157,7 @@ class MultiBot:
             gc.enable()
             return
         print(f"ARBITRAGE PROCESSING STARTED:\n{deal=}")
+        print(f"{self.available_balances=}")
         self.arbitrage_processing = True
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
