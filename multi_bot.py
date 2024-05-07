@@ -92,11 +92,12 @@ class MultiBot:
         self.rabbit = Rabbit(self._loop)
         self.open_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
         self.dump_orders = {'COIN-EXCHANGE': ['id', "ORDER_DATA"]}
-        self.arbitrage_processing = False
+        self.arbitrage_processing = True
         self.run_sub_processes()
         self.requests_in_progress = dict()
         self.created_orders = set()
         self.deleted_orders = set()
+        self.arbitrage_processing = False
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -138,6 +139,9 @@ class MultiBot:
 
     @try_exc_async
     async def run_arbitrage(self, deal):
+        if self.arbitrage_processing:
+            gc.enable()
+            return
         size = self.if_tradable(deal['ex_buy'], deal['ex_sell'], deal['buy_mrkt'], deal['sell_mrkt'], deal['buy_px'])
         if not size:
             # av_bal_buy = self._get_available_balance(deal['ex_buy'], deal['buy_mrkt'], 'buy')
