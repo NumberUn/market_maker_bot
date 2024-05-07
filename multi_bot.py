@@ -188,10 +188,11 @@ class MultiBot:
                                                                                          deal['sell_mrkt'],
                                                                                          client_id))
         ts_send = time.time()
-        await asyncio.sleep(self.deal_pause)
+        await asyncio.sleep(1)
         gc.enable()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
+        await asyncio.sleep(self.deal_pause)
 
     @try_exc_regular
     def ap_deal_report(self, deal, client_id, precised_sz, ts_send):
