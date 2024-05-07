@@ -192,6 +192,7 @@ class MultiBot:
         gc.enable()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
+        await self.update_all_av_balances()
         await asyncio.sleep(self.deal_pause)
 
     @try_exc_regular
