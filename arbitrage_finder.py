@@ -234,7 +234,7 @@ class ArbitrageFinder:
                                                         'trigger_ex': trigger_exchange,
                                                         'trigger_type': trigger_type}
                                                 # print(deal)
-                                                # await self.multibot.run_arbitrage(deal)
+                                                await self.multibot.run_arbitrage(deal)
 
     @staticmethod
     @try_exc_regular
