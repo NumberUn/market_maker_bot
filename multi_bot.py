@@ -217,18 +217,14 @@ class MultiBot:
         for i in range(10):
             time.sleep(1)
             resp_buy = deal['client_buy'].responses.get(client_id)
-            if resp_buy:
+            resp_sell = deal['client_sell'].responses.get(client_id)
+            if resp_buy and resp_sell:
                 break
         if resp_buy:
             deal['client_buy'].responses.pop(client_id)
             ts_sent_buy_own = resp_buy['time_order_sent']
             ts_sent_buy_api = resp_buy['timestamp']
         # if deal['client_sell'].responses.get(client_id):
-        for i in range(10):
-            time.sleep(1)
-            resp_sell = deal['client_sell'].responses.get(client_id)
-            if resp_sell:
-                break
         if resp_sell:
             deal['client_sell'].responses.pop(client_id)
             ts_sent_sell_own = resp_sell['time_order_sent']
