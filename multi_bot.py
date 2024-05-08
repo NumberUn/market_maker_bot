@@ -188,7 +188,6 @@ class MultiBot:
                                                                                          deal['sell_mrkt'],
                                                                                          client_id))
         ts_send = time.time()
-        await asyncio.sleep(2)
         gc.enable()
         self.ap_deal_report(deal, client_id, precised_sz, ts_send)
         self.arbitrage_processing = False
@@ -215,12 +214,20 @@ class MultiBot:
             inner_ping = ts_send - trigger_ping
             fetch_to_count_ping = deal['ts_start_counting'] - trigger_ping
         if deal['client_buy'].responses.get(client_id):
-            resp_buy = deal['client_buy'].responses.get(client_id)
+            for i in range(10):
+                time.sleep(1)
+                resp_buy = deal['client_buy'].responses.get(client_id)
+                if resp_buy:
+                    break
             deal['client_buy'].responses.pop(client_id)
             ts_sent_buy_own = resp_buy['time_order_sent']
             ts_sent_buy_api = resp_buy['timestamp']
         if deal['client_sell'].responses.get(client_id):
-            resp_sell = deal['client_sell'].responses.get(client_id)
+            for i in range(10):
+                time.sleep(1)
+                resp_sell = deal['client_sell'].responses.get(client_id)
+                if resp_sell:
+                    break
             deal['client_sell'].responses.pop(client_id)
             ts_sent_sell_own = resp_sell['time_order_sent']
             ts_sent_sell_api = resp_sell['timestamp']
