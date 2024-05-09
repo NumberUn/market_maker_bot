@@ -23,6 +23,7 @@ class ArbitrageFinder:
         self.clients_with_names = clients_with_names
         self.fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
         self.write_ranges = False
+        self.last_deal_count = 0
         if self.write_ranges:
             self.profit_precise = 4
             self.profit_ranges = self.unpack_ranges()
@@ -159,13 +160,16 @@ class ArbitrageFinder:
                             if not ob_sell.get('bids') or not ob_sell.get('asks'):
                                 continue
                             age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
+                            ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
+                            if now_ts - self.last_deal_count > 30:
+                                print(f"ALERT! DEALS ARE NOT COUNTED: {age_buy=} {age_sell=} {ts_buy=} {ts_sell=}")
                             if age_buy < 3:
                                 if age_sell < 3:
-                                    ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                                     if ts_buy < 3:
                                         if ts_sell < 3:
                                             if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
                                                 continue
+                                            self.last_deal_count = now_ts
                                             poses = {x: y.get_positions() for x, y in self.clients_with_names.items()}
                                             direction = self.get_deal_direction(poses, ex_buy, ex_sell,
                                                                                 buy_mrkt, sell_mrkt)
