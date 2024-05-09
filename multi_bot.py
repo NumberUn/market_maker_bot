@@ -241,20 +241,11 @@ class MultiBot:
         print(f"ARBITRAGE PROCESSING STARTED:\n{deal=}")
         print(f"{self.available_balances=}")
         self.arbitrage_processing = True
-        if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
-            await self.bitkub_run_arbitrage(deal, precised_sz)
-            return
+        # if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
+        #     await self.bitkub_run_arbitrage(deal, precised_sz)
+        #     return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
-        # 'client_buy': client_buy,
-        # 'client_sell': client_sell,
-        # buy_deal = {'price': deal['buy_px'], 'size': precised_sz, 'side': 'buy', 'market': deal['buy_mrkt'],
-        #             'client_id': client_id, 'hedge': True}
-        # sell_deal = {'price': deal['sell_px'], 'size': precised_sz, 'side': 'sell', 'market': deal['sell_mrkt'],
-        #              'client_id':§§§§§§§§§§ client_id, 'hedge': True}
-        # deal['client_buy'].async_tasks.insert(0, ['create_order', buy_deal])
-        # deal['client_sell'].async_tasks.insert(0, ['create_order', sell_deal])
-        # tick_buy = deal['client_buy'].instruments[deal['buy_mrkt']]['tick_size']
         buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
         deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
                                                                                        buy_size,
