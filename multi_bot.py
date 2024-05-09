@@ -177,10 +177,10 @@ class MultiBot:
         elif deal['ex_sell'] == 'BITKUB':
             sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 1.001, precised_sz, deal['sell_mrkt'])
             deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
-                                                                                           sell_size,
-                                                                                           'sell',
-                                                                                           deal['sell_mrkt'],
-                                                                                           client_id))
+                                                                                             sell_size,
+                                                                                             'sell',
+                                                                                             deal['sell_mrkt'],
+                                                                                             client_id))
             await asyncio.sleep(2)
             resp_sell = deal['client_sell'].responses.get(client_id)
             if not resp_sell:
