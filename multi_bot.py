@@ -149,35 +149,37 @@ class MultiBot:
                                                                                            'buy',
                                                                                            deal['buy_mrkt'],
                                                                                            client_id))
-            for i in range(10):
-                time.sleep(0.3)
+            for i in range(30):
+                time.sleep(0.1)
                 resp_buy = deal['client_buy'].responses.get(client_id)
                 if resp_buy:
                     break
             if not resp_buy:
                 deal['client_buy'].cancel_all_orders()
+                gc.enable()
+                return
             elif resp_buy['status'] != OrderStatus.FULLY_EXECUTED:
                 deal['client_buy'].order_loop.create_task(
                     deal['client_buy'].cancel_order(resp_buy['exchange_order_id'])
                 )
-                if resp_buy['size'] != 0:
-                    sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.995,
-                                                                          resp_buy['size'],
-                                                                          deal['sell_mrkt'])
-                    deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
-                                                                                                     sell_size,
-                                                                                                     'sell',
-                                                                                                     deal['sell_mrkt'],
-                                                                                                     client_id))
-                    ts_send = time.time()
-                    time.sleep(1)
-                    gc.enable()
-                    self.ap_deal_report(deal, client_id, precised_sz, ts_send)
-                    self.arbitrage_processing = False
-                    await self.update_all_av_balances()
-                    await asyncio.sleep(self.deal_pause)
-                else:
-                    gc.enable()
+            if resp_buy['size'] != 0:
+                sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.995,
+                                                                      resp_buy['size'],
+                                                                      deal['sell_mrkt'])
+                deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
+                                                                                                 sell_size,
+                                                                                                 'sell',
+                                                                                                 deal['sell_mrkt'],
+                                                                                                 client_id))
+                ts_send = time.time()
+                time.sleep(1)
+                gc.enable()
+                self.ap_deal_report(deal, client_id, precised_sz, ts_send)
+                self.arbitrage_processing = False
+                await self.update_all_av_balances()
+                await asyncio.sleep(self.deal_pause)
+            else:
+                gc.enable()
         elif deal['ex_sell'] == 'BITKUB':
             sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 1.001, precised_sz, deal['sell_mrkt'])
             deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
@@ -185,35 +187,37 @@ class MultiBot:
                                                                                              'sell',
                                                                                              deal['sell_mrkt'],
                                                                                              client_id))
-            for i in range(10):
-                time.sleep(0.3)
+            for i in range(30):
+                time.sleep(0.1)
                 resp_sell = deal['client_sell'].responses.get(client_id)
                 if resp_sell:
                     break
             if not resp_sell:
                 deal['client_sell'].cancel_all_orders()
+                gc.enable()
+                return
             elif resp_sell['status'] != OrderStatus.FULLY_EXECUTED:
                 deal['client_sell'].order_loop.create_task(
                     deal['client_sell'].cancel_order(resp_sell['exchange_order_id'])
                 )
-                if resp_sell['size'] != 0:
-                    buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 0.995,
-                                                                       resp_sell['size'],
-                                                                       deal['buy_mrkt'])
-                    deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
-                                                                                                   buy_size,
-                                                                                                   'buy',
-                                                                                                   deal['buy_mrkt'],
-                                                                                                   client_id))
-                    ts_send = time.time()
-                    time.sleep(1)
-                    gc.enable()
-                    self.ap_deal_report(deal, client_id, precised_sz, ts_send)
-                    self.arbitrage_processing = False
-                    await self.update_all_av_balances()
-                    await asyncio.sleep(self.deal_pause)
-                else:
-                    gc.enable()
+            if resp_sell['size'] != 0:
+                buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 0.995,
+                                                                   resp_sell['size'],
+                                                                   deal['buy_mrkt'])
+                deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
+                                                                                               buy_size,
+                                                                                               'buy',
+                                                                                               deal['buy_mrkt'],
+                                                                                               client_id))
+                ts_send = time.time()
+                time.sleep(1)
+                gc.enable()
+                self.ap_deal_report(deal, client_id, precised_sz, ts_send)
+                self.arbitrage_processing = False
+                await self.update_all_av_balances()
+                await asyncio.sleep(self.deal_pause)
+            else:
+                gc.enable()
 
     @try_exc_async
     async def run_arbitrage(self, deal):
@@ -241,9 +245,9 @@ class MultiBot:
         print(f"ARBITRAGE PROCESSING STARTED:\n{deal=}")
         print(f"{self.available_balances=}")
         self.arbitrage_processing = True
-        # if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
-        #     await self.bitkub_run_arbitrage(deal, precised_sz)
-        #     return
+        if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
+            await self.bitkub_run_arbitrage(deal, precised_sz)
+            return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
