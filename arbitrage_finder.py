@@ -161,7 +161,7 @@ class ArbitrageFinder:
                                 continue
                             age_buy, age_sell = self.get_ob_ages(now_ts, ob_buy, ob_sell)
                             ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
-                            if now_ts - self.last_deal_count > 30:
+                            if now_ts - self.last_deal_count > 60:
                                 print(f"ALERT! DEALS ARE NOT COUNTED: {age_buy=} {age_sell=} {ts_buy=} {ts_sell=}")
                             if age_buy < 3:
                                 if age_sell < 3:
