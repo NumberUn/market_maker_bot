@@ -149,8 +149,11 @@ class MultiBot:
                                                                                            'buy',
                                                                                            deal['buy_mrkt'],
                                                                                            client_id))
-            await asyncio.sleep(2)
-            resp_buy = deal['client_buy'].responses.get(client_id)
+            for i in range(10):
+                time.sleep(0.3)
+                resp_buy = deal['client_buy'].responses.get(client_id)
+                if resp_buy:
+                    break
             if not resp_buy:
                 deal['client_buy'].cancel_all_orders()
             elif resp_buy['status'] != OrderStatus.FULLY_EXECUTED:
@@ -167,6 +170,7 @@ class MultiBot:
                                                                                                      deal['sell_mrkt'],
                                                                                                      client_id))
                     ts_send = time.time()
+                    time.sleep(1)
                     gc.enable()
                     self.ap_deal_report(deal, client_id, precised_sz, ts_send)
                     self.arbitrage_processing = False
@@ -181,8 +185,11 @@ class MultiBot:
                                                                                              'sell',
                                                                                              deal['sell_mrkt'],
                                                                                              client_id))
-            await asyncio.sleep(2)
-            resp_sell = deal['client_sell'].responses.get(client_id)
+            for i in range(10):
+                time.sleep(0.3)
+                resp_sell = deal['client_sell'].responses.get(client_id)
+                if resp_sell:
+                    break
             if not resp_sell:
                 deal['client_sell'].cancel_all_orders()
             elif resp_sell['status'] != OrderStatus.FULLY_EXECUTED:
@@ -199,6 +206,7 @@ class MultiBot:
                                                                                                    deal['buy_mrkt'],
                                                                                                    client_id))
                     ts_send = time.time()
+                    time.sleep(1)
                     gc.enable()
                     self.ap_deal_report(deal, client_id, precised_sz, ts_send)
                     self.arbitrage_processing = False
