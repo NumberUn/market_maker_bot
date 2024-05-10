@@ -207,10 +207,10 @@ class ArbitrageFinder:
 
                                                 if gc.isenabled():
                                                     gc.disable()
-                                                # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                                # print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
-                                                # print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
-                                                # print()
+                                                name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                                print(f"TRIGGER: {trigger_exchange} {trigger_type} {name} PROFIT {profit}")
+                                                print(f"BUY PX: {buy_px} | SELL PX: {sell_px} | DIRECTION: {direction}")
+                                                print()
 
                                                 # print(f"OB PING IS HUGE: {ts_sell=} {ts_buy=}")
                                                 # print()
