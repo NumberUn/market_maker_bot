@@ -177,9 +177,9 @@ class ArbitrageFinder:
                                     sell_px = ob_sell['bids'][0][0]
                                     raw_profit = (sell_px - buy_px) / buy_px
                                     profit = raw_profit - self.fees[ex_buy] - self.fees[ex_sell]
-                                    if profit > 0:
-                                        name = f"T:{trigger_exchange}\nB:{ex_buy}|S:{ex_sell}|C:{coin}"
-                                        print(f"{name} | Profit: {profit}|TSB:{ts_buy}|TSS:{ts_sell}")
+                                    # if profit > 0:
+                                    #     name = f"T:{trigger_exchange}\nB:{ex_buy}|S:{ex_sell}|C:{coin}"
+                                    #     print(f"{name} | Profit: {profit}|TSB:{ts_buy}|TSS:{ts_sell}")
                                     # print(f"ASB:{age_buy}|ASS:{age_sell}\n")
                                     if self.write_ranges:
                                         name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
