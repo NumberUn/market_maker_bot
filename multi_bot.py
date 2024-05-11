@@ -181,7 +181,7 @@ class MultiBot:
             else:
                 gc.enable()
         elif deal['ex_sell'] == 'BITKUB':
-            sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 1.001, precised_sz, deal['sell_mrkt'])
+            sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.999, precised_sz, deal['sell_mrkt'])
             deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
                                                                                              sell_size,
                                                                                              'sell',
@@ -201,7 +201,7 @@ class MultiBot:
                     deal['client_sell'].cancel_order(resp_sell['exchange_order_id'])
                 )
             if resp_sell['size'] != 0:
-                buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 0.995,
+                buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.005,
                                                                    resp_sell['size'],
                                                                    deal['buy_mrkt'])
                 deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
