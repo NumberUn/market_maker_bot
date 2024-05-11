@@ -247,6 +247,7 @@ class MultiBot:
         self.arbitrage_processing = True
         if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
             await self.bitkub_run_arbitrage(deal, precised_sz)
+            self.arbitrage_processing = False
             return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
