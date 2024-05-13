@@ -138,6 +138,12 @@ class MultiBot:
             await self.rabbit.mq.close()
             count += 1
 
+    @try_exc_regular
+    def unsuccessful_deal_report(self, deal):
+        message = 'UNSUCCESSFUL DEAL BITKUB'
+        message += ["\n" + x + ': ' + str(y) for x, y in deal.items()]
+        self.telegram.send_message(message, TG_Groups.MainGroup)
+
     @try_exc_async
     async def bitkub_run_arbitrage(self, deal, precised_sz):
         rand_id = self.id_generator()
@@ -157,6 +163,7 @@ class MultiBot:
             if not resp_buy:
                 deal['client_buy'].cancel_all_orders()
                 gc.enable()
+                self.unsuccessful_deal_report(deal)
                 return
             elif resp_buy['status'] != OrderStatus.FULLY_EXECUTED:
                 deal['client_buy'].order_loop.create_task(
@@ -179,6 +186,7 @@ class MultiBot:
                 await self.update_all_av_balances()
                 await asyncio.sleep(self.deal_pause)
             else:
+                self.unsuccessful_deal_report(deal)
                 gc.enable()
         elif deal['ex_sell'] == 'BITKUB':
             sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.999, precised_sz, deal['sell_mrkt'])
@@ -195,6 +203,7 @@ class MultiBot:
             if not resp_sell:
                 deal['client_sell'].cancel_all_orders()
                 gc.enable()
+                self.unsuccessful_deal_report(deal)
                 return
             elif resp_sell['status'] != OrderStatus.FULLY_EXECUTED:
                 deal['client_sell'].order_loop.create_task(
@@ -217,6 +226,7 @@ class MultiBot:
                 await self.update_all_av_balances()
                 await asyncio.sleep(self.deal_pause)
             else:
+                self.unsuccessful_deal_report(deal)
                 gc.enable()
 
     @try_exc_async
