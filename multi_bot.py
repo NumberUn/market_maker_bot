@@ -140,8 +140,8 @@ class MultiBot:
 
     @try_exc_regular
     def unsuccessful_deal_report(self, deal):
-        message = 'UNSUCCESSFUL DEAL BITKUB'
-        message += ["\n" + x + ': ' + str(y) for x, y in deal.items() if type(y) in [float, str, int]]
+        message = 'UNSUCCESSFUL DEAL BITKUB\n'
+        message += '\n'.join([x + ': ' + str(y) for x, y in deal.items() if 'client' not in x])
         self.telegram.send_message(message, TG_Groups.MainGroup)
 
     @try_exc_async
