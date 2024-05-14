@@ -322,15 +322,15 @@ class MarketFinder:
                         elif best_px >= zero_profit_sell_px >= worst_px:
                             pot_deal.update({'range': [zero_profit_sell_px, best_px], 'target': ob_buy['asks'][self.ob_level]})
                             sell_deals.append(pot_deal)
-        # if sell_deals or buy_deals:
-        #     print(f"COUNTINGS FOR {coin}")
-        #     for deal in sell_deals:
-        #         print(f"BUY DEAL: {deal}")
-        #     for deal in buy_deals:
-        #         print(f"SELL DEAL: {deal}")
-        #     print('\n')
-        if counts:
-            self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
+        if sell_deals or buy_deals:
+            print(f"COUNTINGS FOR {coin}")
+            for deal in sell_deals:
+                print(f"BUY DEAL: {deal}")
+            for deal in buy_deals:
+                print(f"SELL DEAL: {deal}")
+            print('\n')
+        # if counts:
+        #     self.process_parse_results(sell_deals, buy_deals, coin, active_deal, now_ts)
 
     @try_exc_regular
     def get_top_deal(self, sell_deals, buy_deals, coin, active_deal, now_ts):
