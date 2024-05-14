@@ -252,6 +252,8 @@ class MarketFinder:
 
     @try_exc_async
     async def count_one_coin(self, coin, exchange):
+        if self.multibot.arbitrage_processing:
+            return
         buy_deals = []
         sell_deals = []
         active_deal = self.get_active_deal(coin)
