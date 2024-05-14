@@ -43,7 +43,8 @@ class MultiBot:
                  'clients_with_names', 'max_position_part', 'profit_close', 'potential_deals', 'limit_order_shift',
                  'deal_done_event', 'new_ap_event', 'new_db_record_event', 'ap_count_event', 'open_orders',
                  'mm_exchange', 'requests_in_progress', 'deleted_orders', 'count_ob_level', 'dump_orders', 'min_size',
-                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing', 'parser_mode']
+                 'created_orders', 'deleted_orders', 'market_maker', 'arbitrage', 'arbitrage_processing', 'parser_mode',
+                 'last_unsuccess']
 
     def __init__(self):
         self.bot_launch_id = uuid.uuid4()
@@ -99,6 +100,7 @@ class MultiBot:
         self.created_orders = set()
         self.deleted_orders = set()
         self.arbitrage_processing = False
+        self.last_unsuccess = [0, 0]
 
     @try_exc_regular
     def get_default_launch_config(self):
@@ -150,6 +152,8 @@ class MultiBot:
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         if deal['ex_buy'] == 'BITKUB':
             buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
+            if [buy_price, buy_size] == self.last_unsuccess:
+                deal['client_buy'].orderbook[deal['buy_mrkt']] = {'asks': [], 'bids': [], 'ts_ms': 0, 'timestamp': 0}
             deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
                                                                                            buy_size,
                                                                                            'buy',
@@ -163,6 +167,7 @@ class MultiBot:
             if not resp_buy:
                 deal['client_buy'].cancel_all_orders()
                 gc.enable()
+                self.last_unsuccess = [buy_price, buy_size]
                 self.unsuccessful_deal_report(deal)
                 return
             elif resp_buy['status'] != OrderStatus.FULLY_EXECUTED:
@@ -186,10 +191,13 @@ class MultiBot:
                 await self.update_all_av_balances()
                 await asyncio.sleep(self.deal_pause)
             else:
+                self.last_unsuccess = [buy_price, buy_size]
                 self.unsuccessful_deal_report(deal)
                 gc.enable()
         elif deal['ex_sell'] == 'BITKUB':
             sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.999, precised_sz, deal['sell_mrkt'])
+            if [sell_price, sell_size] == self.last_unsuccess:
+                deal['client_sell'].orderbook[deal['sell_mrkt']] = {'asks': [], 'bids': [], 'ts_ms': 0, 'timestamp': 0}
             deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
                                                                                              sell_size,
                                                                                              'sell',
@@ -203,6 +211,7 @@ class MultiBot:
             if not resp_sell:
                 deal['client_sell'].cancel_all_orders()
                 gc.enable()
+                self.last_unsuccess = [sell_price, sell_size]
                 self.unsuccessful_deal_report(deal)
                 return
             elif resp_sell['status'] != OrderStatus.FULLY_EXECUTED:
@@ -226,6 +235,7 @@ class MultiBot:
                 await self.update_all_av_balances()
                 await asyncio.sleep(self.deal_pause)
             else:
+                self.last_unsuccess = [sell_price, sell_size]
                 self.unsuccessful_deal_report(deal)
                 gc.enable()
 

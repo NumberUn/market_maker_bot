@@ -159,7 +159,8 @@ class MarketFinder:
             return False
         if active_deal:
             return True
-        return self.timestamps_filter(ob_buy, ob_sell, now_ts)
+        # return self.timestamps_filter(ob_buy, ob_sell, now_ts)
+        return True
 
     @try_exc_regular
     def timestamps_filter(self, ob_buy: dict, ob_sell: dict, now_ts: float) -> bool:
