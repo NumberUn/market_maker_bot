@@ -243,7 +243,9 @@ class MarketFinder:
 
     @try_exc_regular
     def get_target_profit(self, name, direction):
-        target_profit = self.target_profits.get(name)
+        target_profit = None
+        if self.write_ranges:
+            target_profit = self.target_profits.get(name)
         if not target_profit:
             target_profit = self.count_direction_profit(direction)
         return target_profit
