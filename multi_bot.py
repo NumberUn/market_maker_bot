@@ -462,16 +462,18 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
+                if resp['exchange_order_id']:
                 # print(f"AMEND: {old_order[0]} -> {resp['exchange_order_id']}")
-                self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                mm_client.responses.pop(client_id)
-                self.requests_in_progress.update({market_id: False})
-                return
+                    self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
+                    mm_client.responses.pop(client_id)
+                    self.requests_in_progress.update({market_id: False})
+                    return
             elif resp := mm_client.responses.get(order_id):
-                self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                mm_client.responses.pop(order_id)
-                self.requests_in_progress.update({market_id: False})
-                return
+                if resp['exchange_order_id']:
+                    self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
+                    mm_client.responses.pop(order_id)
+                    self.requests_in_progress.update({market_id: False})
+                    return
             await asyncio.sleep(0.001)
         await self.delete_maker_order(coin, order_id)
         # self.telegram.send_message(f"ALERT! MAKER ORDER WAS NOT AMENDED\n{deal}", TG_Groups.MainGroup)
@@ -526,10 +528,11 @@ class MultiBot:
         mm_client.async_tasks.append(task)
         for i in range(0, 200):
             if resp := mm_client.responses.get(client_id):
+                if resp['exchange_order_id']:
                 # print(f"CREATE: {self.open_orders.get(market_id, [''])[0]} -> {resp['exchange_order_id']}")
-                self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
-                mm_client.responses.pop(client_id)
-                break
+                    self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
+                    mm_client.responses.pop(client_id)
+                    break
             await asyncio.sleep(0.001)
         self.requests_in_progress.update({market_id: False})
         # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
