@@ -486,12 +486,11 @@ class MultiBot:
         market_id = coin + '-' + self.mm_exchange
         for i in range(0, 200):
             if mm_client.cancel_responses.get(order_id):
-                self.requests_in_progress.update({market_id: False})
                 # print(f"DELETE: {order_id}")
                 # self.open_orders.pop(market_id, '')
                 self.dump_orders.update({market_id: self.open_orders.pop(market_id, '')})
                 mm_client.cancel_responses.pop(order_id, '')
-                return
+                break
             await asyncio.sleep(0.001)
         self.requests_in_progress.update({market_id: False})
         # print(f"ALERT! MAKER ORDER WASN'T DELETED: {coin + '-' + self.mm_exchange} {order_id}")
@@ -530,8 +529,7 @@ class MultiBot:
                 # print(f"CREATE: {self.open_orders.get(market_id, [''])[0]} -> {resp['exchange_order_id']}")
                 self.open_orders.update({market_id: [resp['exchange_order_id'], deal]})
                 mm_client.responses.pop(client_id)
-                self.requests_in_progress.update({market_id: False})
-                return
+                break
             await asyncio.sleep(0.001)
         self.requests_in_progress.update({market_id: False})
         # print(f"NEW MAKER ORDER WAS NOT PLACED\n{deal=}")
@@ -577,47 +575,16 @@ class MultiBot:
             rand_id = self.id_generator()
             client_id = f'mtakerxxx{top_clnt.EXCHANGE_NAME}xxx' + deal['coin'] + 'xxx' + rand_id
             price, size = top_clnt.fit_sizes(best_price, deal['size'], best_market)
-            # top_clnt.async_tasks.insert(0, ['create_order', {'price': price,
-            #                                                  'size': size,
-            #                                                  'side': side,
-            #                                                  'market': best_market,
-            #                                                  'client_id': client_id,
-            #                                                  'hedge': True}])
             top_clnt.order_loop.create_task(top_clnt.create_fast_order(price, size, side, best_market, client_id))
             loop = asyncio.get_event_loop()
             loop.create_task(self.get_resp_report_deal(top_clnt, client_id, deal_mem, dump_deal_mem,
                                                        deal, best_ob, mrkt_id, price))
-            # self.db.save_arbitrage_possibilities(deal, size, ts_send, ap_id, buy_id, sell_id, inner_ping,
-            #                                      self.env)
-            # self.db.save_order(order_id=buy_id,
-            #                    deal=deal,
-            #                    ap_id=ap_id,
-            #                    resp=resp_buy,
-            #                    side='buy',
-            #                    size=precised_sz,
-            #                    ts_sent=ts_send,
-            #                    env=self.env,
-            #                    oneway_ping_orderbook=oneway_ping_orderbook_buy,
-            #                    oneway_ping_order=oneway_ping_order_buy,
-            #                    inner_ping=inner_ping_buy)
-            # self.db.save_order(order_id=sell_id,
-            #                    deal=deal,
-            #                    ap_id=ap_id,
-            #                    resp=resp_sell,
-            #                    side='sell',
-            #                    size=precised_sz,
-            #                    ts_sent=ts_send,
-            #                    env=self.env,
-            #                    oneway_ping_orderbook=oneway_ping_orderbook_sell,
-            #                    oneway_ping_order=oneway_ping_order_sell,
-            #                    inner_ping=inner_ping_sell)
         else:
             print(f"ALERT: {deal} was not hedged")
+        self.requests_in_progress.update({mrkt_id: False})
 
     @try_exc_async
     async def get_resp_report_deal(self, top_clnt, client_id, deal_mem, dump_deal_mem, deal, best_ob, mrkt_id, limit_px):
-        await asyncio.sleep(0.02)
-        self.requests_in_progress.update({mrkt_id: False})
         await asyncio.sleep(0.2)
         if resp := top_clnt.responses.get(client_id):
             if not deal_mem:
