@@ -21,7 +21,7 @@ class MarketFinder:
         self.trade_mode = 'low'  # middle
         self.min_size = self.multibot.min_size
         self.write_ranges = False
-        self.orders_prints = False
+        self.orders_prints = True
         if self.write_ranges:
             self.profit_ranges = self.unpack_ranges()
             self.target_profits = self.get_all_target_profits()
