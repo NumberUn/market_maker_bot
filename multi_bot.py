@@ -257,13 +257,14 @@ class MultiBot:
             gc.enable()
             return
         unprecised_sz = min([size / deal['buy_px'], deal['buy_sz'], deal['sell_sz']])
-        precised_sz = self.precise_size(deal['coin'], unprecised_sz)
+        precised_sz = self.precise_size(deal['coin'], unprecised_sz * 0.98)
         if precised_sz == 0:
             # print(f'{precised_sz=} deal is not tradable because of balance')
             gc.enable()
             return
         print(f"ARBITRAGE PROCESSING STARTED:\n{deal=}")
-        print(f"{self.available_balances=}")
+        # print(f"{self.available_balances[deal['ex_buy']][deal['buy_mrkt']]=}")
+        # print(f"{self.available_balances[deal['ex_sell']][deal['sell_mrkt']]=}")
         self.arbitrage_processing = True
         if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
             await self.bitkub_run_arbitrage(deal, precised_sz)
