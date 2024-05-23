@@ -13,4 +13,7 @@ sudo pip3 install orjson & wait
 sudo pip3 install bravado & wait
 sudo pip3 install asyncpg & wait
 sudo pip3 install aiopika & wait
+sudo pip3 install aio_pika & wait
+sudo pip3 install aiodns & wait
+sudo pip3 install dydx_v3_python & wait
 sudo pip3 install --upgrade requests & wait
