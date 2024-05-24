@@ -151,7 +151,7 @@ class MultiBot:
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         if deal['ex_buy'] == 'BITKUB':
-            buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
+            buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.003, precised_sz, deal['buy_mrkt'])
             if [buy_price, buy_size] == self.last_unsuccess:
                 deal['client_buy'].orderbook[deal['buy_mrkt']] = {'asks': [], 'bids': [], 'ts_ms': 0, 'timestamp': 0}
             deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
@@ -195,7 +195,7 @@ class MultiBot:
                 self.unsuccessful_deal_report(deal)
                 gc.enable()
         elif deal['ex_sell'] == 'BITKUB':
-            sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.999, precised_sz, deal['sell_mrkt'])
+            sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.997, precised_sz, deal['sell_mrkt'])
             if [sell_price, sell_size] == self.last_unsuccess:
                 deal['client_sell'].orderbook[deal['sell_mrkt']] = {'asks': [], 'bids': [], 'ts_ms': 0, 'timestamp': 0}
             deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
