@@ -184,12 +184,11 @@ class MultiBot:
                                                                                                  deal['sell_mrkt'],
                                                                                                  client_id))
                 ts_send = time.time()
-                time.sleep(1)
+                await asyncio.sleep(self.deal_pause)
                 gc.enable()
                 self.ap_deal_report(deal, client_id, precised_sz, ts_send)
                 self.arbitrage_processing = False
                 await self.update_all_av_balances()
-                await asyncio.sleep(self.deal_pause)
             else:
                 self.last_unsuccess = [buy_price, buy_size]
                 self.unsuccessful_deal_report(deal)
@@ -294,8 +293,6 @@ class MultiBot:
 
     @try_exc_regular
     def ap_deal_report(self, deal, client_id, precised_sz, ts_send):
-        resp_buy = None
-        resp_sell = None
         real_profit = None
         ts_sent_buy_own = 0
         ts_sent_sell_own = 0
@@ -312,12 +309,8 @@ class MultiBot:
             inner_ping = ts_send - trigger_ping
             fetch_to_count_ping = deal['ts_start_counting'] - trigger_ping
         # if deal['client_buy'].responses.get(client_id):
-        for i in range(15):
-            time.sleep(1)
-            resp_buy = deal['client_buy'].responses.get(client_id)
-            resp_sell = deal['client_sell'].responses.get(client_id)
-            if resp_buy and resp_sell:
-                break
+        resp_buy = deal['client_buy'].responses.get(client_id)
+        resp_sell = deal['client_sell'].responses.get(client_id)
         if resp_buy:
             deal['client_buy'].responses.pop(client_id)
             ts_sent_buy_own = resp_buy['time_order_sent']
