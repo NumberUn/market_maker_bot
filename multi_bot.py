@@ -266,10 +266,10 @@ class MultiBot:
         # print(f"{self.available_balances[deal['ex_buy']][deal['buy_mrkt']]=}")
         # print(f"{self.available_balances[deal['ex_sell']][deal['sell_mrkt']]=}")
         self.arbitrage_processing = True
-        if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
-            await self.bitkub_run_arbitrage(deal, precised_sz)
-            self.arbitrage_processing = False
-            return
+        # if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
+        #     await self.bitkub_run_arbitrage(deal, precised_sz)
+        #     self.arbitrage_processing = False
+        #     return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.002, precised_sz, deal['buy_mrkt'])
@@ -312,7 +312,7 @@ class MultiBot:
             inner_ping = ts_send - trigger_ping
             fetch_to_count_ping = deal['ts_start_counting'] - trigger_ping
         # if deal['client_buy'].responses.get(client_id):
-        for i in range(10):
+        for i in range(15):
             time.sleep(1)
             resp_buy = deal['client_buy'].responses.get(client_id)
             resp_sell = deal['client_sell'].responses.get(client_id)
