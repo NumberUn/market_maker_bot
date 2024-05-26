@@ -271,14 +271,14 @@ class MultiBot:
         #     return
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
-        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.002, precised_sz, deal['buy_mrkt'])
+        buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
         deal['client_buy'].order_loop.create_task(deal['client_buy'].create_fast_order(buy_price,
                                                                                        buy_size,
                                                                                        'buy',
                                                                                        deal['buy_mrkt'],
                                                                                        client_id))
         # tick_sell = deal['client_sell'].instruments[deal['sell_mrkt']]['tick_size']
-        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.998, precised_sz, deal['sell_mrkt'])
+        sell_price, sell_size = deal['client_sell'].fit_sizes(deal['sell_px'] * 0.999, precised_sz, deal['sell_mrkt'])
         deal['client_sell'].order_loop.create_task(deal['client_sell'].create_fast_order(sell_price,
                                                                                          sell_size,
                                                                                          'sell',
