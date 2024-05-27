@@ -281,7 +281,7 @@ class MultiBot:
         self.arbitrage_processing = True
         if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
             if self.check_bitkub_price(deal):
-                self.telegram.send_message(f"BITKUB PRICE CHANGED FOR {deal['coin']}. SKIPPING AP")
+                self.telegram.send_message(f"BITKUB PRICE CHANGED FOR {deal['coin']}. SKIPPING AP", TG_Groups.MainGroup)
                 gc.enable()
                 return
             # await self.bitkub_run_arbitrage(deal, precised_sz)
