@@ -163,10 +163,10 @@ class ArbitrageFinder:
                             ts_buy, ts_sell = self.get_ob_pings(ob_buy, ob_sell)
                             # if now_ts - self.last_deal_count > 60:
                             #     print(f"ALERT! DEALS ARE NOT COUNTED: {age_buy=} {age_sell=} {ts_buy=} {ts_sell=}")
-                            if age_buy < 1.5:
-                                if age_sell < 1.5:
-                                    if ts_buy < 3:
-                                        if ts_sell < 3:
+                            if age_buy < 10:
+                                if age_sell < 10:
+                                    if ts_buy < 1:
+                                        if ts_sell < 1:
                                             if not self.check_timestamps(client_buy, client_sell, ts_buy, ts_sell):
                                                 continue
                             # self.last_deal_count = now_ts
@@ -240,10 +240,10 @@ class ArbitrageFinder:
                                                         'trigger_type': trigger_type}
                                                 # print(deal)
                                                 await self.multibot.run_arbitrage(deal)
-                                else:
-                                    print(f"{sell_mrkt} {ex_sell=} {age_sell=}")
-                            else:
-                                print(f"{buy_mrkt} {ex_buy=} {age_buy=}")
+                            #     else:
+                            #         print(f"{sell_mrkt} {ex_sell=} {age_sell=}")
+                            # else:
+                            #     print(f"{buy_mrkt} {ex_buy=} {age_buy=}")
 
     @staticmethod
     @try_exc_regular
