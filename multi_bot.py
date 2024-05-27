@@ -242,12 +242,12 @@ class MultiBot:
     def check_bitkub_price(self, deal):
         if deal['ex_buy'] == 'BITKUB':
             actual_ob = deal['client_buy'].get_orderbook_by_symbol_reg(deal['buy_mrkt'])
-            if actual_ob['asks'][0][0] > deal['buy_px']:
+            if actual_ob['asks'][0][0] > deal['buy_px'] * 1.001:
                 print(f"{actual_ob['asks'][0][0]=} {deal['buy_px']=}")
                 return True
         elif deal['ex_sell'] == 'BITKUB':
             actual_ob = deal['client_sell'].get_orderbook_by_symbol_reg(deal['sell_mrkt'])
-            if actual_ob['bids'][0][0] < deal['sell_px']:
+            if actual_ob['bids'][0][0] < deal['sell_px'] * 0.999:
                 print(f"{actual_ob['bids'][0][0]=} {deal['sell_px']=}")
                 return True
         return False
