@@ -24,6 +24,9 @@ class ArbitrageFinder:
         self.fees = {x: y.taker_fee for x, y in self.clients_with_names.items()}
         self.write_ranges = False
         self.last_deal_count = 0
+        self.counts = 0
+        self.successful_counts = 0
+        self.time_start = time.time()
         if self.write_ranges:
             self.profit_precise = 4
             self.profit_ranges = self.unpack_ranges()
@@ -133,6 +136,8 @@ class ArbitrageFinder:
         if self.multibot.arbitrage_processing:
             return
         now_ts = time.time()
+        if not round(now_ts - self.time_start) % 300:
+            print(f"{self.counts=} {self.successful_counts=}")
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
                 continue
@@ -204,8 +209,9 @@ class ArbitrageFinder:
                                                 #         print(f'ACTUAL OB {ob_sell}')
                                                 #         print()
                                             # profit = raw_profit - fees
+                                            self.counts += 1
                                             if profit >= target_profit:
-
+                                                self.successful_counts += 1
                                                 if gc.isenabled():
                                                     gc.disable()
                                                 # name = f"B:{ex_buy}|S:{ex_sell}|C:{coin}"
