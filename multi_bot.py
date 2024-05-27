@@ -238,6 +238,20 @@ class MultiBot:
                 self.unsuccessful_deal_report(deal)
                 gc.enable()
 
+    @try_exc_regular
+    def check_bitkub_price(self, deal):
+        if deal['ex_buy'] == 'BITKUB':
+            actual_ob = deal['client_buy'].get_orderbook_by_symbol_reg(deal['buy_mrkt'])
+            if actual_ob['asks'][0][0] > deal['buy_px']:
+                print(f"{actual_ob['asks'][0][0]=} {deal['buy_px']=}")
+                return True
+        elif deal['ex_sell'] == 'BITKUB':
+            actual_ob = deal['client_sell'].get_orderbook_by_symbol_reg(deal['sell_mrkt'])
+            if actual_ob['bids'][0][0] < deal['sell_px']:
+                print(f"{actual_ob['bids'][0][0]=} {deal['sell_px']=}")
+                return True
+        return False
+
     @try_exc_async
     async def run_arbitrage(self, deal):
         if self.arbitrage_processing:
@@ -265,10 +279,15 @@ class MultiBot:
         # print(f"{self.available_balances[deal['ex_buy']][deal['buy_mrkt']]=}")
         # print(f"{self.available_balances[deal['ex_sell']][deal['sell_mrkt']]=}")
         self.arbitrage_processing = True
-        # if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
-        #     await self.bitkub_run_arbitrage(deal, precised_sz)
-        #     self.arbitrage_processing = False
-        #     return
+        if deal['ex_buy'] == 'BITKUB' or deal['ex_sell'] == 'BITKUB':
+            if self.check_bitkub_price(deal):
+                self.telegram.send_message(f"BITKUB PRICE CHANGED FOR {deal['coin']}. SKIPPING AP")
+                gc.enable()
+                return
+            # await self.bitkub_run_arbitrage(deal, precised_sz)
+            # self.arbitrage_processing = False
+            # return
+
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id
         buy_price, buy_size = deal['client_buy'].fit_sizes(deal['buy_px'] * 1.001, precised_sz, deal['buy_mrkt'])
