@@ -240,6 +240,10 @@ class ArbitrageFinder:
                                                         'trigger_type': trigger_type}
                                                 # print(deal)
                                                 await self.multibot.run_arbitrage(deal)
+                                else:
+                                    print(f"{sell_mrkt} {ex_sell=} {age_sell=}")
+                            else:
+                                print(f"{buy_mrkt} {ex_buy=} {age_buy=}")
 
     @staticmethod
     @try_exc_regular
