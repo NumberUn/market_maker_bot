@@ -136,7 +136,7 @@ class ArbitrageFinder:
         if self.multibot.arbitrage_processing:
             return
         now_ts = time.time()
-        if not round(now_ts - self.time_start) % 300:
+        if not round(now_ts - self.time_start) % 120:
             print(f"{self.counts=} {self.successful_counts=}")
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
