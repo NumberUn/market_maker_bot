@@ -285,9 +285,9 @@ class MultiBot:
                 self.telegram.send_message(f"BITKUB PRICE CHANGED FOR {deal['coin']}. SKIPPING AP", TG_Groups.MainGroup)
                 gc.enable()
                 return
-            await self.bitkub_run_arbitrage(deal, precised_sz)
-            self.arbitrage_processing = False
-            return
+            # await self.bitkub_run_arbitrage(deal, precised_sz)
+            # self.arbitrage_processing = False
+            # return
 
         rand_id = self.id_generator()
         client_id = f'takerxxx' + deal['coin'] + 'xxx' + rand_id

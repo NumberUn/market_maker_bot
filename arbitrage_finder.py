@@ -139,6 +139,8 @@ class ArbitrageFinder:
         if not round(now_ts - self.time_start) % 120:
             self.time_start -= 1
             print(f"{self.counts=} {self.successful_counts=}")
+            self.counts = 0
+            self.successful_counts = 0
         for exchange, client in self.clients_with_names.items():
             if trigger_exchange == exchange:
                 continue
